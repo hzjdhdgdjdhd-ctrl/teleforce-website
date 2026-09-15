@@ -23,7 +23,13 @@ export type WithAudit<T> = T & AuditFields
 /* People and access                                                   */
 /* ------------------------------------------------------------------ */
 
-export type Role = 'admin' | 'supervisor' | 'qa' | 'agent'
+export type Role =
+  | 'admin'
+  | 'supervisor'
+  | 'team_leader'
+  | 'qa'
+  | 'agent'
+  | 'viewer'
 
 /** Capability checks read better than role checks at call sites. */
 export const ROLE_CAPABILITIES = {
@@ -47,9 +53,26 @@ export const ROLE_CAPABILITIES = {
     'lead.view',
     'call.work',
     'rebuttal.edit',
+    'team.manage',
+  ],
+  /**
+   * Runs one team. Sees and coaches their own agents, reassigns their leads.
+   * Deliberately cannot manage users, delete campaigns or edit the website —
+   * those are the powers that make the difference between running a team and
+   * running the company.
+   */
+  team_leader: [
+    'report.view',
+    'qa.review',
+    'lead.view',
+    'lead.reassign',
+    'call.work',
+    'team.coach',
   ],
   qa: ['qa.review', 'lead.view', 'report.view'],
   agent: ['call.work', 'lead.view.own'],
+  /** Read-only. For a client or a stakeholder who needs numbers, not access. */
+  viewer: ['report.view'],
 } as const satisfies Record<Role, readonly string[]>
 
 export type Capability =

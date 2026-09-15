@@ -16,6 +16,8 @@ import {
   StatusDot,
   useCommandPalette,
   SignIn,
+  IdleWarning,
+  useIdleTimeout,
   GlobeMark,
   type Command,
 } from '@teleforce/ui'
@@ -242,6 +244,17 @@ export default function App() {
     ? [session.contact.title, session.contact.lastName].filter(Boolean).join(' ')
     : ''
 
+  /* ---- Idle timeout ----
+     Suspended while a call is live. An agent listening to a customer is not
+     idle just because they are not touching the keyboard, and signing them
+     out mid-conversation would lose the call and the lead with it. The clock
+     starts again the moment the call is closed. */
+  const idle = useIdleTimeout({
+    idleMs: 20 * 60_000,
+    onTimeout: () => void auth?.signOut('idle_timeout'),
+    paused: session.dialStarted,
+  })
+
   if (signedIn === null) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -253,11 +266,19 @@ export default function App() {
   }
 
   if (!signedIn && auth) {
-    return <SignIn product="Agent" onSignIn={(e, p) => auth.signIn(e, p)} />
+    return <SignIn product="Agent"
+        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined} onSignIn={(e, p) => auth.signIn(e, p)} />
   }
 
   return (
     <div className="flex min-h-screen flex-col bg-obsidian">
+      {idle.warning && (
+        <IdleWarning
+          remaining={idle.remaining}
+          onStay={idle.staySignedIn}
+          onSignOut={() => void auth?.signOut('manual')}
+        />
+      )}
       <Header
         elapsed={session.elapsed}
         hasCall={Boolean(session.contact)}

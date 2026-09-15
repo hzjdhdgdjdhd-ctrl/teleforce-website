@@ -16,6 +16,8 @@ import {
   GlobeMark,
   Panel,
   SignIn,
+  IdleWarning,
+  useIdleTimeout,
   StatusDot,
   cn,
 } from '@teleforce/ui'
@@ -140,6 +142,14 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [toggleTv])
 
+  /* ---- Idle timeout ----
+     Suspended in TV mode: a wall-mounted board has nobody touching it, and
+     signing it out defeats the point of putting it on the wall. */
+  const idle = useIdleTimeout({
+    onTimeout: () => void auth?.signOut('idle_timeout'),
+    paused: tv,
+  })
+
   if (signedIn === null) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -154,6 +164,7 @@ export default function App() {
     return (
       <SignIn
         product="Supervisor"
+        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined}
         heading="Sign in to the wallboard"
         onSignIn={(e, p) => auth.signIn(e, p)}
       />
@@ -182,8 +193,17 @@ export default function App() {
 
   const q = metrics?.queue
 
+  const idleOverlay = idle.warning ? (
+    <IdleWarning
+      remaining={idle.remaining}
+      onStay={idle.staySignedIn}
+      onSignOut={() => void auth?.signOut('manual')}
+    />
+  ) : null
+
   return (
     <div className={cn('min-h-screen bg-obsidian', tv && 'select-none')}>
+      {idleOverlay}
       {/* Controls hide themselves in TV mode until the mouse moves. */}
       <header
         className={cn(

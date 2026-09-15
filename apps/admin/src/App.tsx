@@ -15,6 +15,8 @@ import {
   EmptyState,
   Panel,
   SignIn,
+  IdleWarning,
+  useIdleTimeout,
   GlobeMark,
   cn,
   useCommandPalette,
@@ -97,6 +99,14 @@ export default function App() {
     [visibleTabs],
   )
 
+  /* ---- Idle timeout ----
+     A command centre left open shows contact data and user management to
+     whoever walks past. */
+  const idle = useIdleTimeout({
+    onTimeout: () => void auth?.signOut('idle_timeout'),
+    paused: false,
+  })
+
   if (signedIn === null) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -111,6 +121,7 @@ export default function App() {
     return (
       <SignIn
         product="Admin"
+        turnstileSiteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined}
         heading="Sign in to the command centre"
         onSignIn={(e, p) => auth.signIn(e, p)}
       />
@@ -139,8 +150,17 @@ export default function App() {
     )
   }
 
+  const idleOverlay = idle.warning ? (
+    <IdleWarning
+      remaining={idle.remaining}
+      onStay={idle.staySignedIn}
+      onSignOut={() => void auth?.signOut('manual')}
+    />
+  ) : null
+
   return (
     <div className="flex min-h-screen flex-col bg-obsidian">
+      {idleOverlay}
       <header className="border-b border-pearl/10">
         <div className="flex items-center justify-between gap-6 px-6 py-3.5">
           <div className="flex items-center gap-5">

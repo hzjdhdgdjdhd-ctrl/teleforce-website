@@ -246,3 +246,35 @@ describe('role capabilities', () => {
     for (const r of roles) expect(can(r, 'report.view' as never)).toBeTypeOf('boolean')
   })
 })
+
+describe('role capability matrix', () => {
+  it('gives a team leader coaching powers without company-level ones', () => {
+    expect(can('team_leader', 'team.coach' as never)).toBe(true)
+    expect(can('team_leader', 'lead.reassign' as never)).toBe(true)
+    expect(can('team_leader', 'report.view' as never)).toBe(true)
+
+    // The line that separates running a team from running the company.
+    expect(can('team_leader', 'user.manage' as never)).toBe(false)
+    expect(can('team_leader', 'campaign.manage' as never)).toBe(false)
+    expect(can('team_leader', 'contacts.upload' as never)).toBe(false)
+  })
+
+  it('makes a viewer read-only', () => {
+    expect(can('viewer', 'report.view' as never)).toBe(true)
+    for (const capability of [
+      'call.work',
+      'lead.reassign',
+      'contacts.upload',
+      'user.manage',
+      'qa.review',
+    ]) {
+      expect(can('viewer', capability as never), capability).toBe(false)
+    }
+  })
+
+  it('keeps admin as the only role that can manage users', () => {
+    const roles = ['admin', 'supervisor', 'team_leader', 'qa', 'agent', 'viewer'] as const
+    const allowed = roles.filter((r) => can(r, 'user.manage' as never))
+    expect(allowed).toEqual(['admin'])
+  })
+})

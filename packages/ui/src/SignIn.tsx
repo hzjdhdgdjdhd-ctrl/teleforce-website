@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Button, Field, Panel, inputClass } from './primitives'
 import { Logo } from './Logo'
+import { Turnstile } from './Turnstile'
 
 /**
  * Sign-in gate.
@@ -12,16 +13,25 @@ export function SignIn({
   onSignIn,
   product,
   heading = 'Sign in to start your shift',
+  turnstileSiteKey,
 }: {
   onSignIn: (email: string, password: string) => Promise<{ ok: boolean; message?: string }>
   /** Shown beside the wordmark, e.g. "Agent" or "Admin". */
   product: string
   heading?: string
+  /** Cloudflare Turnstile site key. Omit to disable the check. */
+  turnstileSiteKey?: string
 }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [, setToken] = useState<string | null>(null)
+
+  // Optional by design. If the key is missing the widget renders nothing and
+  // sign-in still works — an unset environment variable should not lock the
+  // whole floor out at the start of a shift.
+  const siteKey = turnstileSiteKey
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -74,6 +84,8 @@ export function SignIn({
               {error}
             </p>
           )}
+
+          <Turnstile siteKey={siteKey} action="login" onToken={setToken} />
 
           <Button type="submit" fullWidth size="lg" disabled={busy}>
             {busy ? 'Signing in…' : 'Sign in'}

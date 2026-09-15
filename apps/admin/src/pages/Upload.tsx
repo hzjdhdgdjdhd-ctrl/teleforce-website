@@ -1,5 +1,11 @@
 import { useCallback, useRef, useState } from 'react'
-import { importContacts, type ImportResult } from '@teleforce/core'
+import {
+  importContacts,
+  importContactsFromRows,
+  looksLikeXlsx,
+  readXlsx,
+  type ImportResult,
+} from '@teleforce/core'
 import type { Repository } from '@teleforce/data'
 import { Badge, Button, EmptyState, Panel, cn } from '@teleforce/ui'
 
@@ -38,22 +44,31 @@ export function Upload({ repo, userId }: { repo: Repository; userId: string }) {
       }
 
       try {
-        const text = await file.text()
-
         // Skip numbers already on the campaign so a re-uploaded list does not
         // create duplicate work for agents.
         const existing = await repo.listContacts(CAMPAIGN_ID)
         const existingPhones = new Set(existing.map((c) => c.phone))
-
-        const parsed = importContacts(text, {
+        const options = {
           campaignId: CAMPAIGN_ID,
           batchId: 'pending',
           existingPhones,
-        })
+        }
+
+        // Sniff the bytes rather than trusting the extension — a .csv that is
+        // really a workbook is a common export mistake, and vice versa.
+        const bytes = new Uint8Array(await file.arrayBuffer())
+        const parsed = looksLikeXlsx(bytes)
+          ? importContactsFromRows(await readXlsx(bytes), options)
+          : importContacts(new TextDecoder().decode(bytes), options)
+
         setResult(parsed)
         setStage('parsed')
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not read that file.')
+        setError(
+          e instanceof Error
+            ? e.message
+            : 'Could not read that file. Save it as CSV and try again.',
+        )
         setStage('failed')
       }
     },
@@ -109,9 +124,9 @@ export function Upload({ repo, userId }: { repo: Repository; userId: string }) {
           Upload today's contacts
         </h1>
         <p className="mt-2.5 max-w-xl text-[14px] leading-[1.7] text-pearl-dim">
-          CSV or tab-separated. Column names are matched automatically, and any
-          column we do not recognise is kept with the contact rather than
-          discarded.
+          Excel (.xlsx), CSV or tab-separated. Column names are matched
+          automatically, and any column we do not recognise is kept with the
+          contact rather than discarded.
         </p>
       </header>
 
@@ -138,7 +153,7 @@ export function Upload({ repo, userId }: { repo: Repository; userId: string }) {
               Drop a contact file here
             </p>
             <p className="mt-1.5 text-[13px] text-pearl-faint">
-              or choose one from your computer
+              .xlsx, .csv or .tsv — or choose one from your computer
             </p>
             <Button
               variant="secondary"
@@ -150,7 +165,7 @@ export function Upload({ repo, userId }: { repo: Repository; userId: string }) {
             <input
               ref={inputRef}
               type="file"
-              accept=".csv,.tsv,.txt,text/csv,text/plain"
+              accept=".xlsx,.csv,.tsv,.txt,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0]

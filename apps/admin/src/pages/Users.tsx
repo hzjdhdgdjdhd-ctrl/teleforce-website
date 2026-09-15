@@ -20,8 +20,10 @@ import {
 
 const ROLES: Array<{ id: ManagedUser['role']; label: string; blurb: string }> = [
   { id: 'agent', label: 'Agent', blurb: 'Works calls. Sees only the contact assigned to them.' },
+  { id: 'team_leader', label: 'Team Leader', blurb: 'Runs one team: coaches their agents, reassigns their leads. Cannot manage users or campaigns.' },
   { id: 'qa', label: 'QA', blurb: 'Reviews calls and scores compliance. Read-only on leads.' },
   { id: 'supervisor', label: 'Supervisor', blurb: 'Runs the floor: contacts, leads, rebuttals, reporting.' },
+  { id: 'viewer', label: 'Viewer', blurb: 'Read-only reporting. For a stakeholder who needs numbers, not access.' },
   { id: 'admin', label: 'Administrator', blurb: 'Everything, including creating and removing users.' },
 ]
 

@@ -10,7 +10,13 @@
  * migrations is a bug in this file.
  */
 
-export type UserRole = 'admin' | 'supervisor' | 'qa' | 'agent'
+export type UserRole =
+  | 'admin'
+  | 'supervisor'
+  | 'team_leader'
+  | 'qa'
+  | 'agent'
+  | 'viewer'
 
 export type ContactStatusRow =
   | 'available' | 'assigned' | 'in_call' | 'completed'

@@ -21,7 +21,7 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-type Role = 'admin' | 'supervisor' | 'qa' | 'agent'
+type Role = 'admin' | 'supervisor' | 'team_leader' | 'qa' | 'agent' | 'viewer'
 
 interface CreatePayload {
   action: 'create'
@@ -102,7 +102,11 @@ Deno.serve(async (req) => {
         400,
       )
     }
-    if (!['admin', 'supervisor', 'qa', 'agent'].includes(role)) {
+    if (
+      !['admin', 'supervisor', 'team_leader', 'qa', 'agent', 'viewer'].includes(
+        role,
+      )
+    ) {
       return json({ error: 'Unknown role' }, 400)
     }
 

@@ -1,0 +1,53 @@
+name: Deploy
+
+# Deployment is a separate workflow that requires CI to have passed. Chaining
+# it to the same job would let a green-looking run deploy on a step that was
+# skipped.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Never deploy a failed build.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    strategy:
+      # One failing app must not leave the others undeployed and the fleet
+      # split across two versions.
+      fail-fast: false
+      matrix:
+        app: [website, agent, admin, supervisor]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build ${{ matrix.app }}
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_TURNSTILE_SITE_KEY: ${{ secrets.VITE_TURNSTILE_SITE_KEY }}
+        run: npm run build -w @teleforce/${{ matrix.app }}
+
+      - name: Deploy ${{ matrix.app }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/${{ matrix.app }}
+          command: deploy

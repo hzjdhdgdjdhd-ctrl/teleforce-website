@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type {
+  Role,
   CallRecord,
   Contact,
   ContactBatch,
@@ -460,7 +461,18 @@ export class SupabaseAuth {
     }
   }
 
-  async signOut(): Promise<void> {
+  /**
+   * Sign out, recording why.
+   *
+   * The audit entry is written before the token is discarded — afterwards
+   * there is no identity left to attribute it to.
+   */
+  async signOut(reason: 'manual' | 'idle_timeout' = 'manual'): Promise<void> {
+    try {
+      await this.repo.client.rpc('audit_sign_out', { reason })
+    } catch {
+      // Never block a sign-out on telemetry.
+    }
     await this.repo.client.auth.signOut()
   }
 
@@ -486,7 +498,8 @@ export interface ManagedUser {
   id: string
   email: string
   displayName: string
-  role: 'admin' | 'supervisor' | 'qa' | 'agent'
+  /** Sourced from @teleforce/core so there is one definition of a role. */
+  role: Role
   active: boolean
   lastSeenAt?: string
 }

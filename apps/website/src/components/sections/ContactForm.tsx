@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
+import { Turnstile } from '@teleforce/ui'
 import { cn } from '@/lib/cn'
 import { services } from '@/data/services'
 
@@ -18,6 +19,9 @@ import { services } from '@/data/services'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 const CONFIGURED = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY)
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as
+  | string
+  | undefined
 
 type Status = 'idle' | 'submitting' | 'sent' | 'error' | 'unconfigured'
 
@@ -78,6 +82,7 @@ export default function ContactForm() {
   const [fields, setFields] = useState<Fields>(EMPTY)
   const [status, setStatus] = useState<Status>('idle')
   const [errors, setErrors] = useState<Partial<Record<keyof Fields, string>>>({})
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
 
   const set = (key: keyof Fields) => (
     e: React.ChangeEvent<
@@ -119,28 +124,34 @@ export default function ContactForm() {
 
     setStatus('submitting')
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/enquiries`, {
+      // Goes through the edge function so the Turnstile token is verified
+      // against Cloudflare with the secret key, which cannot live in a
+      // browser bundle. A token stored unverified would prove nothing.
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-enquiry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           apikey: SUPABASE_ANON_KEY!,
           Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          Prefer: 'return=minimal',
         },
         body: JSON.stringify({
-          name: fields.name.trim(),
-          email: fields.email.trim(),
-          organisation: fields.organisation.trim(),
-          role: fields.role.trim() || null,
-          interest: fields.interest || null,
-          volume: fields.volume || null,
-          message: fields.message.trim(),
-          source_page: window.location.pathname,
-          user_agent: navigator.userAgent.slice(0, 500),
+          name: fields.name,
+          email: fields.email,
+          organisation: fields.organisation,
+          role: fields.role,
+          interest: fields.interest,
+          volume: fields.volume,
+          message: fields.message,
+          sourcePage: window.location.pathname,
+          turnstileToken,
+          website: fields.website,
         }),
       })
 
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`)
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string }
+        throw new Error(body.error ?? `Request failed: ${res.status}`)
+      }
       setStatus('sent')
       setFields(EMPTY)
     } catch {
@@ -284,6 +295,13 @@ export default function ContactForm() {
           </a>
           .
         </p>
+
+        <Turnstile
+          siteKey={TURNSTILE_SITE_KEY}
+          action="contact"
+          onToken={setTurnstileToken}
+          className="w-full sm:w-auto"
+        />
 
         <Button type="submit" disabled={status === 'submitting'}>
           {status === 'submitting' ? 'Sending…' : 'Send enquiry'}

@@ -1,0 +1,61 @@
+name: CI
+
+# Every push and every pull request. A pipeline that only runs on main tells
+# you about a break after it is already shared.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # Supersede an in-flight run for the same branch: the older result is
+  # already stale and the runner minutes are better spent on the newer commit.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Assets are generated, so a stale committed component is possible.
+      # Rebuilding and diffing catches an SVG edited without regenerating.
+      - name: Build assets
+        run: npm run assets
+
+      - name: Check generated assets are current
+        run: |
+          if [ -n "$(git status --porcelain packages/ui/src/assets assets)" ]; then
+            echo "::error::Generated assets are out of date. Run 'npm run assets' and commit the result."
+            git --no-pager diff --stat packages/ui/src/assets assets
+            exit 1
+          fi
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+# Call-script integrity is asserted in packages/core/test/script.test.ts —
+# validateScript() must return no problems — so `npm test` above is the gate.
+# A second mechanism with its own module resolution would only drift.

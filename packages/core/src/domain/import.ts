@@ -251,7 +251,20 @@ export function importContacts(
   text: string,
   options: ImportOptions,
 ): ImportResult {
-  const rows = parseDelimited(text, detectDelimiter(text))
+  return importContactsFromRows(parseDelimited(text, detectDelimiter(text)), options)
+}
+
+/**
+ * Import from already-parsed rows.
+ *
+ * CSV and XLSX differ only in how the bytes become a grid, so everything
+ * after that point — header matching, normalisation, duplicate detection —
+ * is shared. A spreadsheet upload gets exactly the same validation as a CSV.
+ */
+export function importContactsFromRows(
+  rows: string[][],
+  options: ImportOptions,
+): ImportResult {
   const issues: ImportIssue[] = []
 
   if (rows.length < 2) {
