@@ -37,19 +37,17 @@ export const company = {
   },
 
   /* ---- Contact ----
-     PENDING: the domain addresses below are ready to switch on, but Cloudflare
-     Email Routing is not enabled yet, so mail to them would bounce. Keeping the
-     working inbox live until routing is verified.
+     No email address is published. The site previously printed a personal
+     Gmail address, which is both a privacy exposure for its owner and a
+     credibility problem for an enterprise buyer.
 
-       email:               'contact@teleforcetechnology.org'
-       dataProtectionEmail: 'privacy@teleforcetechnology.org'
-
-     To switch: enable Email → Email Routing in Cloudflare, create both
-     aliases forwarding to the monitored inbox, click the verification link,
-     confirm MX records resolve, then swap the two values below. */
-  email: 'arid0202@gmail.com',
-  dataProtectionEmail: 'arid0202@gmail.com',
-  phone: '' as string, // TODO: add a published business number, or leave blank to hide.
+     Enquiries go to the `enquiries` table in Supabase instead. When a
+     monitored mailbox exists on the domain, set publicEmail below and the
+     footer and contact page will show it again automatically. */
+  publicEmail: '' as string,
+  dataProtectionEmail: '' as string,
+  /** Published business number. Blank hides the field rather than inventing one. */
+  phone: '' as string,
 
   /* ---- Web ---- */
   domain: 'teleforcetechnology.org',

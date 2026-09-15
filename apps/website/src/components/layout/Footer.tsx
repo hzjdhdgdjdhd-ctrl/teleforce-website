@@ -75,12 +75,21 @@ export default function Footer() {
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold/80">
                   Enquiries
                 </p>
-                <a
-                  href={`mailto:${company.email}`}
-                  className="mt-2.5 inline-block text-[13px] text-pearl-dim underline-offset-4 transition-colors hover:text-gold hover:underline"
-                >
-                  {company.email}
-                </a>
+                {company.publicEmail ? (
+                  <a
+                    href={`mailto:${company.publicEmail}`}
+                    className="mt-2.5 inline-block text-[13px] text-pearl-dim underline-offset-4 transition-colors hover:text-gold hover:underline"
+                  >
+                    {company.publicEmail}
+                  </a>
+                ) : (
+                  <Link
+                    to="/contact"
+                    className="mt-2.5 inline-block text-[13px] text-pearl-dim underline-offset-4 transition-colors hover:text-gold hover:underline"
+                  >
+                    Send an enquiry
+                  </Link>
+                )}
               </div>
             </div>
           </div>

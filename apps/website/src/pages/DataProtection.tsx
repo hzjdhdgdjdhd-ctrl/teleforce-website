@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import PageHero from '@/components/sections/PageHero'
 import CtaBand from '@/components/sections/CtaBand'
 import { Container, Section, Eyebrow } from '@/components/ui/Section'
@@ -46,12 +47,21 @@ export default function DataProtection() {
             <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.2em] text-gold/80">
               Data protection contact
             </p>
-            <a
-              href={`mailto:${company.dataProtectionEmail}`}
-              className="mt-3 block text-[14px] text-pearl underline-offset-4 transition-colors hover:text-gold hover:underline"
-            >
-              {company.dataProtectionEmail}
-            </a>
+            {company.dataProtectionEmail ? (
+              <a
+                href={`mailto:${company.dataProtectionEmail}`}
+                className="mt-3 block text-[14px] text-pearl underline-offset-4 transition-colors hover:text-gold hover:underline"
+              >
+                {company.dataProtectionEmail}
+              </a>
+            ) : (
+              <Link
+                to="/contact"
+                className="mt-3 block text-[14px] text-pearl underline-offset-4 transition-colors hover:text-gold hover:underline"
+              >
+                Contact us about data protection
+              </Link>
+            )}
             <p className="mt-5 border-t border-pearl/10 pt-5 text-[12.5px] leading-relaxed text-pearl-faint">
               Data protection enquiries relating to a specific client engagement
               are routed to that client, who is the controller for their data.

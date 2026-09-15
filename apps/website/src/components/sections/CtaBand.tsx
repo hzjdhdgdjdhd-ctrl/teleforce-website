@@ -1,7 +1,6 @@
 import { ButtonLink } from '@/components/ui/Button'
 import { Container, Eyebrow } from '@/components/ui/Section'
 import Reveal from '@/components/ui/Reveal'
-import { company } from '@/config/company'
 
 /** Closing call to action used at the foot of every page. */
 export default function CtaBand() {
@@ -41,8 +40,8 @@ export default function CtaBand() {
               <ButtonLink to="/contact" variant="primary">
                 Start a conversation
               </ButtonLink>
-              <ButtonLink to={`mailto:${company.email}`} variant="secondary">
-                {company.email}
+              <ButtonLink to="/services" variant="secondary">
+                See what we run
               </ButtonLink>
             </div>
           </Reveal>

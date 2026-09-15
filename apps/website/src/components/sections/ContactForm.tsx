@@ -1,24 +1,25 @@
 import { useState, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
-import { company } from '@/config/company'
 import { cn } from '@/lib/cn'
 import { services } from '@/data/services'
 
 /**
  * Enterprise enquiry form.
  *
- * SUBMISSION IS NOT WIRED UP BY DEFAULT — and deliberately so. Set
- * `VITE_CONTACT_ENDPOINT` to a URL that accepts a JSON POST and the form will
- * use it. Without that, the form composes the enquiry into a mail client
- * rather than silently pretending to have sent something.
+ * Submits to the `enquiries` table in Supabase. There is deliberately no
+ * mailto fallback: the only address available would be a personal one, and
+ * a mailto link publishes it in the page source to every scraper that visits.
  *
- * Do not replace the fallback with a fake success state.
+ * If Supabase is not configured the form says so plainly rather than
+ * pretending to send. Never replace that with a fake success state.
  */
 
-const ENDPOINT = import.meta.env.VITE_CONTACT_ENDPOINT as string | undefined
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+const CONFIGURED = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY)
 
-type Status = 'idle' | 'submitting' | 'sent' | 'error' | 'mailto'
+type Status = 'idle' | 'submitting' | 'sent' | 'error' | 'unconfigured'
 
 interface Fields {
   name: string
@@ -104,45 +105,41 @@ export default function ContactForm() {
     return Object.keys(next).length === 0
   }
 
-  const composeBody = () =>
-    [
-      `Name: ${fields.name}`,
-      `Email: ${fields.email}`,
-      `Organisation: ${fields.organisation}`,
-      fields.role && `Role: ${fields.role}`,
-      fields.interest && `Area of interest: ${fields.interest}`,
-      fields.volume && `Indicative scale: ${fields.volume}`,
-      '',
-      fields.message,
-    ]
-      .filter(Boolean)
-      .join('\n')
-
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
-    // Honeypot tripped — silently stop without telling the bot why.
+    // Honeypot tripped — stop silently rather than telling the bot why.
     if (fields.website) return
     if (!validate()) return
 
-    if (!ENDPOINT) {
-      // No backend configured: hand the composed enquiry to the mail client.
-      const subject = encodeURIComponent(
-        `Enquiry from ${fields.organisation || fields.name}`,
-      )
-      const body = encodeURIComponent(composeBody())
-      window.location.href = `mailto:${company.email}?subject=${subject}&body=${body}`
-      setStatus('mailto')
+    if (!CONFIGURED) {
+      setStatus('unconfigured')
       return
     }
 
     setStatus('submitting')
     try {
-      const res = await fetch(ENDPOINT, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/enquiries`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...fields, website: undefined }),
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_ANON_KEY!,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          name: fields.name.trim(),
+          email: fields.email.trim(),
+          organisation: fields.organisation.trim(),
+          role: fields.role.trim() || null,
+          interest: fields.interest || null,
+          volume: fields.volume || null,
+          message: fields.message.trim(),
+          source_page: window.location.pathname,
+          user_agent: navigator.userAgent.slice(0, 500),
+        }),
       })
+
       if (!res.ok) throw new Error(`Request failed: ${res.status}`)
       setStatus('sent')
       setFields(EMPTY)
@@ -306,30 +303,24 @@ export default function ContactForm() {
             className={cn(
               'mt-7 border-l-2 p-5 text-[13.5px] leading-relaxed',
               status === 'sent' && 'border-gold bg-gold/[0.05] text-pearl',
-              status === 'mailto' && 'border-exec-300 bg-exec/10 text-pearl-dim',
+              status === 'unconfigured' && 'border-exec-300 bg-exec/10 text-pearl-dim',
               status === 'error' && 'border-gold/70 bg-gold/[0.04] text-pearl-dim',
             )}
           >
             {status === 'sent' && (
               <>
                 <strong className="font-medium text-gold">Enquiry received.</strong>{' '}
-                Thank you — we will come back to you directly.
+                Thank you — we read every enquiry ourselves and will come back to
+                you directly.
               </>
             )}
-            {status === 'mailto' && (
+            {status === 'unconfigured' && (
               <>
                 <strong className="font-medium text-pearl">
-                  Your email client should now be open
+                  This form is not connected yet.
                 </strong>{' '}
-                with the enquiry composed. If nothing happened, email us directly
-                at{' '}
-                <a
-                  href={`mailto:${company.email}`}
-                  className="text-gold underline underline-offset-4"
-                >
-                  {company.email}
-                </a>
-                .
+                Enquiries cannot be submitted until the site is configured.
+                Please try again shortly.
               </>
             )}
             {status === 'error' && (
@@ -337,14 +328,8 @@ export default function ContactForm() {
                 <strong className="font-medium text-pearl">
                   That did not send.
                 </strong>{' '}
-                Please email us directly at{' '}
-                <a
-                  href={`mailto:${company.email}`}
-                  className="text-gold underline underline-offset-4"
-                >
-                  {company.email}
-                </a>{' '}
-                and we will pick it up.
+                Something went wrong at our end rather than yours. Please try
+                again in a moment.
               </>
             )}
           </motion.div>

@@ -43,18 +43,25 @@ export default function Contact() {
               <Reveal delay={0.08}>
                 <Card className="p-8">
                   <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-gold/80">
-                    Direct
+                    How to reach us
                   </h2>
-                  <a
-                    href={`mailto:${company.email}`}
-                    className="mt-4 block text-[15px] text-pearl underline-offset-4 transition-colors hover:text-gold hover:underline"
-                  >
-                    {company.email}
-                  </a>
+                  {company.publicEmail ? (
+                    <a
+                      href={`mailto:${company.publicEmail}`}
+                      className="mt-4 block text-[15px] text-pearl underline-offset-4 transition-colors hover:text-gold hover:underline"
+                    >
+                      {company.publicEmail}
+                    </a>
+                  ) : (
+                    <p className="mt-4 text-[14px] leading-[1.8] text-pearl-dim">
+                      The form is the fastest route to us. It reaches the people
+                      who would run your engagement, not a shared inbox.
+                    </p>
+                  )}
                   {company.phone && (
                     <a
                       href={`tel:${company.phone.replace(/\s/g, '')}`}
-                      className="mt-2 block text-[15px] text-pearl underline-offset-4 transition-colors hover:text-gold hover:underline"
+                      className="mt-3 block text-[15px] text-pearl underline-offset-4 transition-colors hover:text-gold hover:underline"
                     >
                       {company.phone}
                     </a>
