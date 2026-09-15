@@ -4,7 +4,7 @@ import HumanNetwork from '@/components/visuals/HumanNetwork'
 import { ButtonLink } from '@/components/ui/Button'
 import { Container, Eyebrow } from '@/components/ui/Section'
 import { company } from '@/config/company'
-import { useSection } from '@/hooks/useSiteContent'
+import { useSection } from '@/hooks/useSection'
 
 /** Shipped copy. The CMS overrides these; it never replaces the file. */
 const DEFAULT_HERO = {
