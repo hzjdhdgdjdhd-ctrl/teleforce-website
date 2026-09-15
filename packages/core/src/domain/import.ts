@@ -105,7 +105,13 @@ type Field =
 /** Header spellings seen in real supplier files, normalised. */
 const ALIASES: Record<Field, string[]> = {
   title: ['title', 'salutation', 'prefix'],
-  firstName: ['firstname', 'first', 'forename', 'givenname', 'fname', 'name'],
+  // "Full Name", "Customer Name" and "Contact Name" are as common as
+  // "First Name" in supplier exports, and a combined column is split below.
+  firstName: [
+    'firstname', 'first', 'forename', 'givenname', 'fname',
+    'name', 'fullname', 'customername', 'contactname', 'clientname',
+    'accountname', 'householder',
+  ],
   lastName: ['lastname', 'last', 'surname', 'familyname', 'lname'],
   // Aliases are compared after normaliseHeader(), so "Telephone No." arrives
   // here as "telephone" and needs no separate entry.

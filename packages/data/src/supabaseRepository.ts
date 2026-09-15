@@ -450,3 +450,181 @@ export class SupabaseAuth {
     return Boolean(data.session)
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Administration                                                      */
+/* ------------------------------------------------------------------ */
+
+export interface ManagedUser {
+  id: string
+  email: string
+  displayName: string
+  role: 'admin' | 'supervisor' | 'qa' | 'agent'
+  active: boolean
+  lastSeenAt?: string
+}
+
+export interface AdminResult {
+  ok: boolean
+  error?: string
+  userId?: string
+}
+
+/**
+ * Admin operations that need the service role.
+ *
+ * These go through the `manage-users` edge function rather than the database
+ * directly: creating an auth user requires a key that must never be shipped
+ * to a browser.
+ */
+export class SupabaseAdmin {
+  constructor(private readonly repo: SupabaseRepository) {}
+
+  async listUsers(): Promise<ManagedUser[]> {
+    const { data, error } = await this.repo.client
+      .from('profiles')
+      .select('id, email, display_name, role, active, last_seen_at')
+      .order('email')
+    if (error) throw new Error(error.message)
+
+    return (data as Array<Record<string, unknown>>).map((r) => ({
+      id: r.id as string,
+      email: r.email as string,
+      displayName: r.display_name as string,
+      role: r.role as ManagedUser['role'],
+      active: r.active as boolean,
+      ...(r.last_seen_at ? { lastSeenAt: r.last_seen_at as string } : {}),
+    }))
+  }
+
+  async createUser(input: {
+    email: string
+    password: string
+    displayName: string
+    role: ManagedUser['role']
+    campaignIds?: string[]
+  }): Promise<AdminResult> {
+    return this.invoke({ action: 'create', ...input })
+  }
+
+  async updateUser(input: {
+    userId: string
+    role?: ManagedUser['role']
+    active?: boolean
+    displayName?: string
+  }): Promise<AdminResult> {
+    return this.invoke({ action: 'update', ...input })
+  }
+
+  private async invoke(body: Record<string, unknown>): Promise<AdminResult> {
+    const { data, error } = await this.repo.client.functions.invoke(
+      'manage-users',
+      { body },
+    )
+
+    if (error) {
+      // The function returns a useful message in the body; surface that
+      // rather than the generic "non-2xx status code" the client throws.
+      let message = error.message
+      try {
+        const ctx = (error as { context?: Response }).context
+        if (ctx) {
+          const parsed = (await ctx.clone().json()) as { error?: string }
+          if (parsed.error) message = parsed.error
+        }
+      } catch {
+        // Keep the original message.
+      }
+      return { ok: false, error: message }
+    }
+
+    const result = data as AdminResult
+    return result?.ok ? result : { ok: false, error: result?.error ?? 'Failed' }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Scripts                                                             */
+/* ------------------------------------------------------------------ */
+
+export interface StoredScript {
+  id: string
+  campaignId: string
+  name: string
+  version: number
+  entry: string
+  nodes: Record<string, unknown>
+  published: boolean
+  publishedAt?: string
+  updatedAt: string
+}
+
+export class SupabaseScripts {
+  constructor(private readonly repo: SupabaseRepository) {}
+
+  async list(campaignId: string): Promise<StoredScript[]> {
+    const { data, error } = await this.repo.client
+      .from('scripts')
+      .select('*')
+      .eq('campaign_id', campaignId)
+      .order('version', { ascending: false })
+    if (error) throw new Error(error.message)
+    return (data as Array<Record<string, unknown>>).map(toScript)
+  }
+
+  /** The version agents are currently working from. */
+  async published(campaignId: string): Promise<StoredScript | null> {
+    const { data, error } = await this.repo.client
+      .from('scripts')
+      .select('*')
+      .eq('campaign_id', campaignId)
+      .eq('published', true)
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    return data ? toScript(data as Record<string, unknown>) : null
+  }
+
+  async save(script: {
+    id?: string
+    campaignId: string
+    name: string
+    entry: string
+    nodes: Record<string, unknown>
+  }): Promise<string> {
+    const row = {
+      ...(script.id ? { id: script.id } : {}),
+      campaign_id: script.campaignId,
+      name: script.name,
+      entry: script.entry,
+      nodes: script.nodes,
+    }
+    const { data, error } = await this.repo.client
+      .from('scripts')
+      .upsert(row)
+      .select('id')
+      .single()
+    if (error) throw new Error(error.message)
+    return (data as { id: string }).id
+  }
+
+  async publish(scriptId: string): Promise<void> {
+    const { error } = await this.repo.client.rpc('publish_script', {
+      script_id: scriptId,
+    })
+    if (error) throw new Error(error.message)
+  }
+}
+
+function toScript(r: Record<string, unknown>): StoredScript {
+  return {
+    id: r.id as string,
+    campaignId: r.campaign_id as string,
+    name: r.name as string,
+    version: r.version as number,
+    entry: r.entry as string,
+    nodes: (r.nodes ?? {}) as Record<string, unknown>,
+    published: r.published as boolean,
+    ...(r.published_at ? { publishedAt: r.published_at as string } : {}),
+    updatedAt: r.updated_at as string,
+  }
+}

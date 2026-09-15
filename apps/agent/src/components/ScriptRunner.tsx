@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   currentNode,
-  hhcroScript,
   isComplete,
+  type CallScript,
   type ScriptState,
 } from '@teleforce/core'
 import { Badge, Button, Kbd, Panel, cn } from '@teleforce/ui'
@@ -16,15 +16,17 @@ import { Badge, Button, Kbd, Panel, cn } from '@teleforce/ui'
  * keyboard while the agent is writing notes with the other hand.
  */
 export function ScriptRunner({
+  script,
   state,
   onAnswer,
   customerName,
 }: {
+  script: CallScript
   state: ScriptState
   onAnswer: (input: { optionId?: string; value?: string }) => void
   customerName: string
 }) {
-  const node = currentNode(hhcroScript, state)
+  const node = currentNode(script, state)
   const [captureValue, setCaptureValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const complete = isComplete(state)
@@ -64,9 +66,9 @@ export function ScriptRunner({
   }, [node, options, onAnswer])
 
   const progress = useMemo(() => {
-    const total = Object.keys(hhcroScript.nodes).length
+    const total = Object.keys(script.nodes).length
     return Math.min(99, Math.round((state.answers.length / total) * 100))
-  }, [state.answers.length])
+  }, [state.answers.length, script.nodes])
 
   if (!node || complete) {
     return (

@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { isComplete, type Disposition, type Rebuttal } from '@teleforce/core'
+import {
+  hhcroScript,
+  isComplete,
+  type CallScript,
+  type Disposition,
+  type Rebuttal,
+} from '@teleforce/core'
 import {
   Badge,
   Button,
@@ -15,8 +21,9 @@ import {
   createRepository,
   SupabaseAuth,
   SupabaseRepository,
+  SupabaseScripts,
 } from '@teleforce/data'
-import { useCallSession } from './useCallSession'
+import { resolveScript, useCallSession } from './useCallSession'
 import { ContactPanel } from './components/ContactPanel'
 import { ScriptRunner } from './components/ScriptRunner'
 import { RebuttalRail } from './components/RebuttalRail'
@@ -26,8 +33,9 @@ import { DispositionBar, quickDispositions } from './components/DispositionBar'
 const { repo, backend } = createRepository(
   import.meta.env as Record<string, string | undefined>,
 )
-const auth =
-  repo instanceof SupabaseRepository ? new SupabaseAuth(repo) : null
+const supa = repo instanceof SupabaseRepository ? repo : null
+const auth = supa ? new SupabaseAuth(supa) : null
+const scriptApi = supa ? new SupabaseScripts(supa) : null
 
 /**
  * Agent workspace.
@@ -55,7 +63,14 @@ export default function App() {
     })
   }, [signedIn])
 
-  const session = useCallSession(repo, agentId)
+  // Load whatever the admin has published; fall back to the bundled script.
+  const [script, setScript] = useState<CallScript>(hhcroScript)
+  useEffect(() => {
+    if (!signedIn) return
+    void resolveScript(scriptApi).then(({ script: s }) => setScript(s))
+  }, [signedIn])
+
+  const session = useCallSession(repo, agentId, script)
   const [rebuttals, setRebuttals] = useState<Rebuttal[]>([])
   const palette = useCommandPalette()
 
@@ -183,6 +198,7 @@ export default function App() {
               {session.script && (
                 <div className="min-h-0 flex-1">
                   <ScriptRunner
+                    script={script}
                     state={session.script}
                     onAnswer={session.answer}
                     customerName={customerName}

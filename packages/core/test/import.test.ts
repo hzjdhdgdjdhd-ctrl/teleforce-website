@@ -131,6 +131,55 @@ describe('importContacts', () => {
     expect(r.contacts[0]).toMatchObject({ firstName: 'John', lastName: 'Smith' })
   })
 
+  it('recognises the combined-name headers suppliers actually send', () => {
+    // Regression: "Full Name" was not in the alias list, so every row in a
+    // file using it was rejected as having no name.
+    for (const header of [
+      'Full Name',
+      'Customer Name',
+      'Contact Name',
+      'Householder',
+    ]) {
+      const r = importContacts(`${header},Phone\nJane Doe,01132000000`, opts)
+      expect(r.imported, header).toBe(1)
+      expect(r.contacts[0], header).toMatchObject({
+        firstName: 'Jane',
+        lastName: 'Doe',
+      })
+    }
+  })
+
+  it('handles a realistic messy supplier export', () => {
+    const csv =
+      '\uFEFF' +
+      [
+        'Title,Full Name,"Telephone No.",Mobile,Address,Town,Post Code,Supplier Ref',
+        'mr,john smith,01132000000,07700900111,"14 Elmwood Avenue, Flat 2",leeds,ls11ab,EGA-001',
+        'mrs,PRIYA NAIR,7700900777,,3 Beckett Road,bradford,bd71pl,EGA-002',
+        'mr,duplicate person,0113 200 0000,,1 Somewhere,leeds,ls11ab,EGA-004',
+        'mr,no phone here,,,,,,EGA-005',
+      ].join('\n')
+
+    const r = importContacts(csv, opts)
+    expect(r.imported).toBe(2)
+    expect(r.skippedDuplicates).toBe(1)
+    expect(r.rejected).toBe(1)
+
+    expect(r.contacts[0]).toMatchObject({
+      title: 'Mr',
+      firstName: 'John',
+      lastName: 'Smith',
+      phone: '01132000000',
+      alternativePhone: '07700900111',
+      addressLine1: '14 Elmwood Avenue, Flat 2',
+      city: 'Leeds',
+      postcode: 'LS1 1AB',
+      extra: { 'Supplier Ref': 'EGA-001' },
+    })
+    // Leading zero lost by the spreadsheet export is restored.
+    expect(r.contacts[1]!.phone).toBe('07700900777')
+  })
+
   it('preserves unmapped columns verbatim rather than discarding them', () => {
     const csv = 'First Name,Phone,Supplier Ref,Lead Source\nJo,01132000000,ABC-9,Facebook'
     const r = importContacts(csv, opts)

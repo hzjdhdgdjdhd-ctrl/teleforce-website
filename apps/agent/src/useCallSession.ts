@@ -3,6 +3,8 @@ import {
   answer as advance,
   capturedFields,
   hhcroScript,
+  validateScript,
+  type CallScript,
   isComplete,
   scoreCall,
   startCall,
@@ -11,7 +13,11 @@ import {
   type Contact,
   type Lead,
 } from '@teleforce/core'
-import { nowIso, type Repository } from '@teleforce/data'
+import {
+  nowIso,
+  SupabaseScripts,
+  type Repository,
+} from '@teleforce/data'
 
 /**
  * A single call from dial to disposition.
@@ -22,6 +28,47 @@ import { nowIso, type Repository } from '@teleforce/data'
  */
 
 const CAMPAIGN_ID = 'hhcro'
+
+/**
+ * Resolve the script agents work from.
+ *
+ * Prefers the version published in the database so wording changes do not
+ * need a deployment. Falls back to the bundled script when nothing is
+ * published, or when what is published fails validation — an agent mid-shift
+ * must never be handed a broken flow, and a stale-but-working script beats no
+ * script at all.
+ */
+export async function resolveScript(
+  scripts: SupabaseScripts | null,
+): Promise<{ script: CallScript; source: 'published' | 'bundled' }> {
+  if (!scripts) return { script: hhcroScript, source: 'bundled' }
+
+  try {
+    const stored = await scripts.published(CAMPAIGN_ID)
+    if (!stored) return { script: hhcroScript, source: 'bundled' }
+
+    const candidate: CallScript = {
+      id: stored.id,
+      name: stored.name,
+      version: stored.version,
+      entry: stored.entry,
+      nodes: stored.nodes as CallScript['nodes'],
+    }
+
+    const problems = validateScript(candidate)
+    if (problems.length > 0) {
+      console.error(
+        `Published script ${stored.id} failed validation; using the bundled script instead.`,
+        problems,
+      )
+      return { script: hhcroScript, source: 'bundled' }
+    }
+
+    return { script: candidate, source: 'published' }
+  } catch {
+    return { script: hhcroScript, source: 'bundled' }
+  }
+}
 
 export interface CallSession {
   contact: Contact | null
@@ -41,9 +88,10 @@ export interface CallSession {
 export function useCallSession(
   repo: Repository,
   agentId: string,
+  script: CallScript = hhcroScript,
 ): CallSession {
   const [contact, setContact] = useState<Contact | null>(null)
-  const [script, setScript] = useState<ScriptState | null>(null)
+  const [scriptState, setScriptState] = useState<ScriptState | null>(null)
   const [callId, setCallId] = useState<string | null>(null)
   const [rebuttalsUsed, setRebuttalsUsed] = useState<string[]>([])
   const [notes, setNotes] = useState('')
@@ -76,7 +124,7 @@ export function useCallSession(
     loadingNext.current = true
 
     setLoading(true)
-    setScript(null)
+    setScriptState(null)
     setCallId(null)
     setRebuttalsUsed([])
     setNotes('')
@@ -85,8 +133,8 @@ export function useCallSession(
     setContact(next)
 
     if (next) {
-      const state = startCall(hhcroScript)
-      setScript(state)
+      const state = startCall(script)
+      setScriptState(state)
       const started = Date.now()
       setStartedAt(started)
 
@@ -94,8 +142,8 @@ export function useCallSession(
         campaignId: CAMPAIGN_ID,
         contactId: next.id,
         agentId,
-        scriptId: hhcroScript.id,
-        scriptVersion: hhcroScript.version,
+        scriptId: script.id,
+        scriptVersion: script.version,
         startedAt: new Date(started).toISOString(),
         answers: [],
         checkpointsReached: [],
@@ -117,10 +165,10 @@ export function useCallSession(
 
   const answer = useCallback(
     (input: { optionId?: string; value?: string }) => {
-      setScript((prev) => {
+      setScriptState((prev) => {
         if (!prev || isComplete(prev)) return prev
         try {
-          return advance(hhcroScript, prev, input)
+          return advance(script, prev, input)
         } catch {
           // An invalid transition should never reach here — the UI only
           // offers valid options — but a thrown error mid-call would lose
@@ -138,17 +186,17 @@ export function useCallSession(
 
   /* Persist script progress so a refresh does not lose the call. */
   useEffect(() => {
-    if (!callId || !script) return
+    if (!callId || !scriptState) return
     void repo.updateCall(callId, {
-      answers: script.answers,
-      checkpointsReached: script.checkpointsReached,
+      answers: scriptState.answers,
+      checkpointsReached: scriptState.checkpointsReached,
       rebuttalsUsed,
     })
-  }, [callId, script, rebuttalsUsed, repo])
+  }, [callId, scriptState, rebuttalsUsed, repo])
 
   const outcomeSummary = useMemo(
-    () => (script && isComplete(script) ? scoreCall(script) : null),
-    [script],
+    () => (scriptState && isComplete(scriptState) ? scoreCall(scriptState) : null),
+    [scriptState],
   )
 
   const close = useCallback(
@@ -158,7 +206,7 @@ export function useCallSession(
 
       try {
         const endedAt = Date.now()
-        const compliance = script ? scoreCall(script) : null
+        const compliance = scriptState ? scoreCall(scriptState) : null
 
         await repo.updateCall(callId, {
           endedAt: new Date(endedAt).toISOString(),
@@ -171,8 +219,8 @@ export function useCallSession(
 
         // A qualified call becomes a lead. Everything the surveyor needs is
         // denormalised onto it so the export stands alone.
-        if (disposition === 'qualified' && script && compliance) {
-          const fields = capturedFields(hhcroScript, script)
+        if (disposition === 'qualified' && scriptState && compliance) {
+          const fields = capturedFields(script, scriptState)
           const lead: Omit<Lead, 'id'> = {
             campaignId: CAMPAIGN_ID,
             contactId: contact.id,
@@ -189,8 +237,8 @@ export function useCallSession(
             ...(contact.addressLine1 ? { addressLine1: contact.addressLine1 } : {}),
             ...(contact.city ? { city: contact.city } : {}),
             ...(contact.postcode ? { postcode: contact.postcode } : {}),
-            leadType: script.leadType,
-            eligibilityPath: script.groupsSatisfied,
+            leadType: scriptState.leadType,
+            eligibilityPath: scriptState.groupsSatisfied,
             ...(fields.password ? { password: fields.password } : {}),
             ...(fields.bestTimeToCall
               ? { bestTimeToCall: fields.bestTimeToCall }
@@ -225,12 +273,12 @@ export function useCallSession(
         closing.current = false
       }
     },
-    [contact, callId, script, notes, startedAt, agentId, repo, loadNext],
+    [contact, callId, scriptState, notes, startedAt, agentId, repo, loadNext],
   )
 
   return {
     contact,
-    script,
+    script: scriptState,
     elapsed,
     loading,
     rebuttalsUsed,

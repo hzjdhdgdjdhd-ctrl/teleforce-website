@@ -3,8 +3,10 @@ import type { UserProfile } from '@teleforce/core'
 import { can } from '@teleforce/core'
 import {
   createRepository,
+  SupabaseAdmin,
   SupabaseAuth,
   SupabaseRepository,
+  SupabaseScripts,
 } from '@teleforce/data'
 import {
   Badge,
@@ -19,17 +21,25 @@ import {
 } from '@teleforce/ui'
 import { Upload } from './pages/Upload'
 import { Leads } from './pages/Leads'
+import { Users } from './pages/Users'
+import { Questions } from './pages/Questions'
 
 const { repo, backend } = createRepository(
   import.meta.env as Record<string, string | undefined>,
 )
-const auth = repo instanceof SupabaseRepository ? new SupabaseAuth(repo) : null
+const supa = repo instanceof SupabaseRepository ? repo : null
+const auth = supa ? new SupabaseAuth(supa) : null
+const adminApi = supa ? new SupabaseAdmin(supa) : null
+const scriptApi = supa ? new SupabaseScripts(supa) : null
 
-type Tab = 'upload' | 'leads'
+type Tab = 'upload' | 'leads' | 'questions' | 'users'
 
-const TABS: Array<{ id: Tab; label: string }> = [
+/** `adminOnly` tabs are hidden from supervisors; RLS refuses them regardless. */
+const TABS: Array<{ id: Tab; label: string; adminOnly?: boolean }> = [
   { id: 'upload', label: 'Upload contacts' },
   { id: 'leads', label: 'Leads' },
+  { id: 'questions', label: 'Questions & script' },
+  { id: 'users', label: 'Users & agents', adminOnly: true },
 ]
 
 /**
@@ -59,9 +69,14 @@ export default function App() {
     void repo.currentUser().then(setProfile)
   }, [signedIn])
 
+  const visibleTabs = useMemo(
+    () => TABS.filter((t) => !t.adminOnly || profile?.role === 'admin'),
+    [profile],
+  )
+
   const commands = useMemo<Command[]>(
     () => [
-      ...TABS.map((t) => ({
+      ...visibleTabs.map((t) => ({
         id: `nav-${t.id}`,
         group: 'Go to',
         label: t.label,
@@ -78,7 +93,7 @@ export default function App() {
           ]
         : []),
     ],
-    [],
+    [visibleTabs],
   )
 
   if (signedIn === null) {
@@ -156,7 +171,7 @@ export default function App() {
         </div>
 
         <nav className="flex gap-1 px-6" aria-label="Sections">
-          {TABS.map((t) => (
+          {visibleTabs.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -180,6 +195,10 @@ export default function App() {
           <Upload repo={repo} userId={profile?.uid ?? 'local-admin'} />
         )}
         {tab === 'leads' && <Leads repo={repo} />}
+        {tab === 'questions' && <Questions scripts={scriptApi} />}
+        {tab === 'users' && (
+          <Users admin={adminApi} currentUserId={profile?.uid ?? ''} />
+        )}
       </main>
 
       <CommandPalette
