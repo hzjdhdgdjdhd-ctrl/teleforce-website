@@ -1,0 +1,21 @@
+{
+  "name": "@teleforce/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Domain model, call-script flow engine and compliance scoring for the Teleforce platform",
+  "exports": {
+    ".": "./src/index.ts",
+    "./script": "./src/script/index.ts",
+    "./compliance": "./src/compliance/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vitest": "^3.2.4"
+  }
+}

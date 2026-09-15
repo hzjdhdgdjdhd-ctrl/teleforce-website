@@ -1,35 +1,22 @@
 {
-  "name": "teleforcetechnology",
+  "name": "teleforce",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "description": "Teleforce Technology — human-powered BPO operating system",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "node scripts/generate-sitemap.mjs && tsc -b && vite build",
-    "lint": "oxlint",
-    "preview": "npm run build && wrangler dev",
-    "sitemap": "node scripts/generate-sitemap.mjs",
-    "deploy": "npm run build && wrangler deploy",
-    "cf:login": "wrangler login",
-    "cf:whoami": "wrangler whoami"
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build:website": "npm run build -w @teleforce/website",
+    "deploy:website": "npm run deploy -w @teleforce/website",
+    "dev:website": "npm run dev -w @teleforce/website"
   },
-  "dependencies": {
-    "framer-motion": "^13.3.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.3"
-  },
-  "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.54.9",
-    "@tailwindcss/vite": "^4.3.3",
-    "@types/node": "^24.13.3",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
-    "@vitejs/plugin-react": "^6.1.1",
-    "oxlint": "^1.81.0",
-    "tailwindcss": "^4.3.3",
-    "typescript": "~6.0.2",
-    "vite": "^8.3.0",
-    "wrangler": "^4.131.2"
+  "engines": {
+    "node": ">=20"
   }
 }

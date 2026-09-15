@@ -37,11 +37,18 @@ export const company = {
   },
 
   /* ---- Contact ----
-     Both addresses are Cloudflare Email Routing aliases on the domain; they
-     forward to the monitored inbox. Routing must stay enabled in Cloudflare
-     (Email → Email Routing) or mail to these addresses will bounce. */
-  email: 'contact@teleforcetechnology.org',
-  dataProtectionEmail: 'privacy@teleforcetechnology.org',
+     PENDING: the domain addresses below are ready to switch on, but Cloudflare
+     Email Routing is not enabled yet, so mail to them would bounce. Keeping the
+     working inbox live until routing is verified.
+
+       email:               'contact@teleforcetechnology.org'
+       dataProtectionEmail: 'privacy@teleforcetechnology.org'
+
+     To switch: enable Email → Email Routing in Cloudflare, create both
+     aliases forwarding to the monitored inbox, click the verification link,
+     confirm MX records resolve, then swap the two values below. */
+  email: 'arid0202@gmail.com',
+  dataProtectionEmail: 'arid0202@gmail.com',
   phone: '' as string, // TODO: add a published business number, or leave blank to hide.
 
   /* ---- Web ---- */
