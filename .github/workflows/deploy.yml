@@ -65,7 +65,7 @@ jobs:
       - name: Deploy ${{ matrix.app }}
         uses: cloudflare/wrangler-action@v3.14.0
         with:
-  apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-  accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-  workingDirectory: apps/${{ matrix.app }}
-  command: pages deploy dist --project-name=teleforce-${{ matrix.app }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/${{ matrix.app }}
+          command: pages deploy dist --project-name=teleforce-${{ matrix.app }}
