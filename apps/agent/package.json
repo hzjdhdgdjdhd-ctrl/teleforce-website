@@ -13,7 +13,8 @@
     "@teleforce/core": "*",
     "@teleforce/ui": "*",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "@teleforce/data": "*"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

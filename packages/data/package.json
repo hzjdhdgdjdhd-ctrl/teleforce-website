@@ -1,0 +1,14 @@
+{
+  "name": "@teleforce/data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Storage adapters for the Teleforce platform — Supabase in production, local for development",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc -p tsconfig.json --noEmit" },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.58.0",
+    "@teleforce/core": "*"
+  },
+  "devDependencies": { "typescript": "~6.0.2" }
+}

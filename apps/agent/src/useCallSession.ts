@@ -11,8 +11,7 @@ import {
   type Contact,
   type Lead,
 } from '@teleforce/core'
-import { newId, nowIso } from './data/repository'
-import type { Repository } from './data/repository'
+import { nowIso, type Repository } from '@teleforce/data'
 
 /**
  * A single call from dial to disposition.
@@ -245,4 +244,4 @@ export function useCallSession(
   }
 }
 
-export { CAMPAIGN_ID, newId }
+export { CAMPAIGN_ID }

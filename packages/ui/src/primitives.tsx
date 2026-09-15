@@ -135,13 +135,17 @@ export function Badge({
   tone = 'neutral',
   children,
   className,
+  title,
 }: {
   tone?: Tone
   children: ReactNode
   className?: string
+  /** Native tooltip — useful for explaining a status without cluttering it. */
+  title?: string
 }) {
   return (
     <span
+      title={title}
       className={cn(
         'inline-flex items-center gap-1.5 border px-2 py-0.5',
         'font-mono text-[10.5px] uppercase tracking-[0.12em]',

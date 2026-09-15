@@ -10,14 +10,15 @@ import {
   useCommandPalette,
   type Command,
 } from '@teleforce/ui'
-import { LocalRepository } from './data/localRepository'
+import { createRepository } from '@teleforce/data'
 import { useCallSession } from './useCallSession'
 import { ContactPanel } from './components/ContactPanel'
 import { ScriptRunner } from './components/ScriptRunner'
 import { RebuttalRail } from './components/RebuttalRail'
 import { DispositionBar, quickDispositions } from './components/DispositionBar'
 
-const repo = new LocalRepository()
+// Supabase when VITE_SUPABASE_URL is set, browser-local otherwise.
+const { repo, backend } = createRepository(import.meta.env as Record<string, string | undefined>)
 
 /**
  * Agent workspace.
@@ -112,7 +113,11 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-obsidian">
-      <Header elapsed={session.elapsed} hasCall={Boolean(session.contact)} />
+      <Header
+        elapsed={session.elapsed}
+        hasCall={Boolean(session.contact)}
+        backend={backend}
+      />
 
       <main className="flex-1 px-5 pb-5">
         {session.loading ? (
@@ -201,7 +206,15 @@ export default function App() {
 
 /* ------------------------------------------------------------------ */
 
-function Header({ elapsed, hasCall }: { elapsed: string; hasCall: boolean }) {
+function Header({
+  elapsed,
+  hasCall,
+  backend,
+}: {
+  elapsed: string
+  hasCall: boolean
+  backend: 'supabase' | 'local'
+}) {
   return (
     <header className="flex items-center justify-between gap-6 border-b border-pearl/10 px-5 py-3.5">
       <div className="flex items-center gap-4">
@@ -214,6 +227,13 @@ function Header({ elapsed, hasCall }: { elapsed: string; hasCall: boolean }) {
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Local storage means nothing leaves this browser. An agent must be
+            able to see that at a glance, or a day's leads can be lost. */}
+        {backend === 'local' && (
+          <Badge tone="warn" title="Leads are saved in this browser only">
+            Local storage — not synced
+          </Badge>
+        )}
         {hasCall && (
           <Badge tone="gold">
             <StatusDot tone="gold" />
