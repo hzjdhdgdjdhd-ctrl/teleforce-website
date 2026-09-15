@@ -395,3 +395,58 @@ function toLead(r: LeadRow): Lead {
     ...(r.notes ? { notes: r.notes } : {}),
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Auth helpers                                                        */
+/* ------------------------------------------------------------------ */
+
+export interface AuthResult {
+  ok: boolean
+  message?: string
+}
+
+/**
+ * Sign-in helpers kept alongside the repository so apps import one module.
+ *
+ * Error messages are deliberately plain: an agent locked out at the start of
+ * a shift needs to know what to do, not read a stack trace.
+ */
+export class SupabaseAuth {
+  constructor(private readonly repo: SupabaseRepository) {}
+
+  async signIn(email: string, password: string): Promise<AuthResult> {
+    const { error } = await this.repo.client.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    })
+    if (!error) return { ok: true }
+
+    // Supabase returns the same message for a wrong password and an unknown
+    // account, which is correct — it avoids confirming whether an address is
+    // registered.
+    return {
+      ok: false,
+      message:
+        error.message === 'Invalid login credentials'
+          ? 'That email and password did not match. Check both and try again.'
+          : error.message,
+    }
+  }
+
+  async signOut(): Promise<void> {
+    await this.repo.client.auth.signOut()
+  }
+
+  /** Fires on sign-in, sign-out and token refresh. */
+  onChange(callback: (signedIn: boolean) => void): () => void {
+    const { data } = this.repo.client.auth.onAuthStateChange((_event, session) => {
+      callback(Boolean(session))
+    })
+    return () => data.subscription.unsubscribe()
+  }
+
+  async hasSession(): Promise<boolean> {
+    const { data } = await this.repo.client.auth.getSession()
+    return Boolean(data.session)
+  }
+}

@@ -10,7 +10,12 @@ import {
   useCommandPalette,
   type Command,
 } from '@teleforce/ui'
-import { createRepository } from '@teleforce/data'
+import {
+  createRepository,
+  SupabaseAuth,
+  SupabaseRepository,
+} from '@teleforce/data'
+import { SignIn } from './components/SignIn'
 import { useCallSession } from './useCallSession'
 import { ContactPanel } from './components/ContactPanel'
 import { ScriptRunner } from './components/ScriptRunner'
@@ -18,7 +23,11 @@ import { RebuttalRail } from './components/RebuttalRail'
 import { DispositionBar, quickDispositions } from './components/DispositionBar'
 
 // Supabase when VITE_SUPABASE_URL is set, browser-local otherwise.
-const { repo, backend } = createRepository(import.meta.env as Record<string, string | undefined>)
+const { repo, backend } = createRepository(
+  import.meta.env as Record<string, string | undefined>,
+)
+const auth =
+  repo instanceof SupabaseRepository ? new SupabaseAuth(repo) : null
 
 /**
  * Agent workspace.
@@ -28,9 +37,23 @@ const { repo, backend } = createRepository(import.meta.env as Record<string, str
  * navigation, because navigating mid-call is how calls get lost.
  */
 export default function App() {
-  // Until Firebase Auth is wired, the agent identity comes from the local
-  // profile the supervisor sets on the machine.
-  const agentId = 'agent-local'
+  // `null` while the session is still being resolved, so the sign-in form
+  // does not flash for an agent who is already authenticated.
+  const [signedIn, setSignedIn] = useState<boolean | null>(auth ? null : true)
+  const [agentId, setAgentId] = useState<string>('agent-local')
+
+  useEffect(() => {
+    if (!auth) return
+    void auth.hasSession().then(setSignedIn)
+    return auth.onChange(setSignedIn)
+  }, [])
+
+  useEffect(() => {
+    if (!signedIn) return
+    void repo.currentUser().then((u) => {
+      if (u) setAgentId(u.uid)
+    })
+  }, [signedIn])
 
   const session = useCallSession(repo, agentId)
   const [rebuttals, setRebuttals] = useState<Rebuttal[]>([])
@@ -110,6 +133,20 @@ export default function App() {
   const customerName = session.contact
     ? [session.contact.title, session.contact.lastName].filter(Boolean).join(' ')
     : ''
+
+  if (signedIn === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-pearl-faint">
+          Checking session…
+        </span>
+      </div>
+    )
+  }
+
+  if (!signedIn && auth) {
+    return <SignIn onSignIn={(e, p) => auth.signIn(e, p)} />
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-obsidian">
