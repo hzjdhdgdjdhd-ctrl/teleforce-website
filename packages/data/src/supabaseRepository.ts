@@ -668,3 +668,84 @@ function toScript(r: Record<string, unknown>): StoredScript {
     updatedAt: r.updated_at as string,
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* QA                                                                  */
+/* ------------------------------------------------------------------ */
+
+export interface QaQueueRow {
+  call_id: string
+  lead_id: string | null
+  agent_id: string
+  agent_name: string
+  started_at: string
+  ended_at: string | null
+  duration_seconds: number | null
+  disposition: string | null
+  checkpoints_reached: string[]
+  rebuttals_used: string[]
+  answers: Array<{ nodeId: string; label: string; value: string; at: number }>
+  notes: string | null
+  customer_name: string | null
+  customer_phone: string | null
+  compliance_score: number | null
+  billable: boolean | null
+  lead_status: string | null
+  reviewed: boolean
+  review_passed: boolean | null
+  reviewer_name: string | null
+  reviewed_at: string | null
+}
+
+export class SupabaseQa {
+  constructor(private readonly repo: SupabaseRepository) {}
+
+  async queue(options: {
+    campaignId?: string
+    onlyUnreviewed?: boolean
+    limit?: number
+  } = {}): Promise<QaQueueRow[]> {
+    const { data, error } = await this.repo.client.rpc('qa_queue', {
+      target_campaign: options.campaignId ?? 'hhcro',
+      only_unreviewed: options.onlyUnreviewed ?? false,
+      limit_rows: options.limit ?? 100,
+    })
+    if (error) throw new Error(error.message)
+    return (data ?? []) as QaQueueRow[]
+  }
+
+  async submit(input: {
+    callId: string
+    passed: boolean
+    coaching?: string
+    overridden?: string[]
+    supervisorNote?: string
+  }): Promise<void> {
+    const { error } = await this.repo.client.rpc('submit_qa_review', {
+      target_call: input.callId,
+      passed: input.passed,
+      coaching: input.coaching ?? '',
+      overridden: input.overridden ?? [],
+      supervisor_note: input.supervisorNote ?? null,
+    })
+    if (error) throw new Error(error.message)
+  }
+
+  /** Audit trail for one call, newest first. */
+  async history(callId: string): Promise<
+    Array<{ at: string; action: string; actor_email: string | null; detail: unknown }>
+  > {
+    const { data, error } = await this.repo.client
+      .from('audit_logs')
+      .select('at, action, actor_email, detail')
+      .eq('target', `calls/${callId}`)
+      .order('at', { ascending: false })
+    if (error) throw new Error(error.message)
+    return (data ?? []) as Array<{
+      at: string
+      action: string
+      actor_email: string | null
+      detail: unknown
+    }>
+  }
+}

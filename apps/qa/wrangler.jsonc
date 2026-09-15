@@ -1,0 +1,15 @@
+{
+  // Teleforce QA console — static SPA on Workers Assets.
+  "name": "teleforce-qa",
+  "compatibility_date": "2026-09-15",
+  "main": "./worker/index.ts",
+  "assets": {
+    "directory": "./dist/client",
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "routes": [
+    { "pattern": "qa.teleforcetechnology.org", "custom_domain": true }
+  ]
+}
