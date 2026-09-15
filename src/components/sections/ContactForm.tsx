@@ -1,0 +1,355 @@
+import { useState, type FormEvent } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Button } from '@/components/ui/Button'
+import { company } from '@/config/company'
+import { cn } from '@/lib/cn'
+import { services } from '@/data/services'
+
+/**
+ * Enterprise enquiry form.
+ *
+ * SUBMISSION IS NOT WIRED UP BY DEFAULT — and deliberately so. Set
+ * `VITE_CONTACT_ENDPOINT` to a URL that accepts a JSON POST and the form will
+ * use it. Without that, the form composes the enquiry into a mail client
+ * rather than silently pretending to have sent something.
+ *
+ * Do not replace the fallback with a fake success state.
+ */
+
+const ENDPOINT = import.meta.env.VITE_CONTACT_ENDPOINT as string | undefined
+
+type Status = 'idle' | 'submitting' | 'sent' | 'error' | 'mailto'
+
+interface Fields {
+  name: string
+  email: string
+  organisation: string
+  role: string
+  interest: string
+  volume: string
+  message: string
+  /** Honeypot — real users never fill this. */
+  website: string
+}
+
+const EMPTY: Fields = {
+  name: '',
+  email: '',
+  organisation: '',
+  role: '',
+  interest: '',
+  volume: '',
+  message: '',
+  website: '',
+}
+
+const inputBase =
+  'w-full border border-pearl/12 bg-pearl/[0.02] px-4 py-3.5 text-[14px] text-pearl ' +
+  'placeholder:text-pearl-faint transition-colors duration-300 ' +
+  'focus:border-gold/60 focus:bg-pearl/[0.04] focus:outline-none'
+
+function Field({
+  label,
+  required,
+  children,
+  error,
+}: {
+  label: string
+  required?: boolean
+  children: React.ReactNode
+  error?: string
+}) {
+  return (
+    <label className="block">
+      <span className="flex items-baseline gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-pearl-faint">
+        {label}
+        {required && <span className="text-gold/80">*</span>}
+      </span>
+      <div className="mt-2.5">{children}</div>
+      {error && (
+        <span className="mt-2 block text-[12px] text-gold/90">{error}</span>
+      )}
+    </label>
+  )
+}
+
+export default function ContactForm() {
+  const [fields, setFields] = useState<Fields>(EMPTY)
+  const [status, setStatus] = useState<Status>('idle')
+  const [errors, setErrors] = useState<Partial<Record<keyof Fields, string>>>({})
+
+  const set = (key: keyof Fields) => (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    setFields((f) => ({ ...f, [key]: e.target.value }))
+    setErrors((prev) => ({ ...prev, [key]: undefined }))
+  }
+
+  const validate = (): boolean => {
+    const next: Partial<Record<keyof Fields, string>> = {}
+    if (!fields.name.trim()) next.name = 'Please tell us who you are.'
+    if (!fields.email.trim()) {
+      next.email = 'We need an address to reply to.'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(fields.email.trim())) {
+      next.email = 'That does not look like a valid email address.'
+    }
+    if (!fields.organisation.trim())
+      next.organisation = 'Which organisation are you enquiring for?'
+    if (fields.message.trim().length < 20)
+      next.message =
+        'A sentence or two about the process you want supported helps us reply usefully.'
+    setErrors(next)
+    return Object.keys(next).length === 0
+  }
+
+  const composeBody = () =>
+    [
+      `Name: ${fields.name}`,
+      `Email: ${fields.email}`,
+      `Organisation: ${fields.organisation}`,
+      fields.role && `Role: ${fields.role}`,
+      fields.interest && `Area of interest: ${fields.interest}`,
+      fields.volume && `Indicative scale: ${fields.volume}`,
+      '',
+      fields.message,
+    ]
+      .filter(Boolean)
+      .join('\n')
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+
+    // Honeypot tripped — silently stop without telling the bot why.
+    if (fields.website) return
+    if (!validate()) return
+
+    if (!ENDPOINT) {
+      // No backend configured: hand the composed enquiry to the mail client.
+      const subject = encodeURIComponent(
+        `Enquiry from ${fields.organisation || fields.name}`,
+      )
+      const body = encodeURIComponent(composeBody())
+      window.location.href = `mailto:${company.email}?subject=${subject}&body=${body}`
+      setStatus('mailto')
+      return
+    }
+
+    setStatus('submitting')
+    try {
+      const res = await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...fields, website: undefined }),
+      })
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`)
+      setStatus('sent')
+      setFields(EMPTY)
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} noValidate className="panel p-8 md:p-10 lg:p-12">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="text-xl text-pearl">Enquiry</h2>
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-pearl-faint">
+          * Required
+        </span>
+      </div>
+      <div className="hairline mt-6" />
+
+      <div className="mt-8 grid gap-6 sm:grid-cols-2">
+        <Field label="Full name" required error={errors.name}>
+          <input
+            type="text"
+            value={fields.name}
+            onChange={set('name')}
+            className={cn(inputBase, errors.name && 'border-gold/50')}
+            placeholder="Jordan Ellis"
+            autoComplete="name"
+          />
+        </Field>
+
+        <Field label="Work email" required error={errors.email}>
+          <input
+            type="email"
+            value={fields.email}
+            onChange={set('email')}
+            className={cn(inputBase, errors.email && 'border-gold/50')}
+            placeholder="jordan@company.co.uk"
+            autoComplete="email"
+          />
+        </Field>
+
+        <Field label="Organisation" required error={errors.organisation}>
+          <input
+            type="text"
+            value={fields.organisation}
+            onChange={set('organisation')}
+            className={cn(inputBase, errors.organisation && 'border-gold/50')}
+            placeholder="Company name"
+            autoComplete="organization"
+          />
+        </Field>
+
+        <Field label="Your role">
+          <input
+            type="text"
+            value={fields.role}
+            onChange={set('role')}
+            className={inputBase}
+            placeholder="Head of Operations"
+            autoComplete="organization-title"
+          />
+        </Field>
+
+        <Field label="Area of interest">
+          <select
+            value={fields.interest}
+            onChange={set('interest')}
+            className={cn(inputBase, 'appearance-none')}
+          >
+            <option value="">Select a service line</option>
+            {services.map((s) => (
+              <option key={s.id} value={s.title} className="bg-navy">
+                {s.title}
+              </option>
+            ))}
+            <option value="Not sure yet" className="bg-navy">
+              Not sure yet
+            </option>
+          </select>
+        </Field>
+
+        <Field label="Indicative scale">
+          <select
+            value={fields.volume}
+            onChange={set('volume')}
+            className={cn(inputBase, 'appearance-none')}
+          >
+            <option value="">Select if known</option>
+            {[
+              'Exploring options',
+              '1–5 people',
+              '6–15 people',
+              '16–40 people',
+              '40+ people',
+            ].map((v) => (
+              <option key={v} value={v} className="bg-navy">
+                {v}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+
+      <div className="mt-6">
+        <Field
+          label="Which process would you like supported?"
+          required
+          error={errors.message}
+        >
+          <textarea
+            value={fields.message}
+            onChange={set('message')}
+            rows={5}
+            className={cn(inputBase, 'resize-y', errors.message && 'border-gold/50')}
+            placeholder="Tell us what the process involves today, which systems it touches, and what good would look like."
+          />
+        </Field>
+      </div>
+
+      {/* Honeypot — visually and programmatically hidden from real users */}
+      <div aria-hidden="true" className="absolute left-[-9999px] h-0 w-0 overflow-hidden">
+        <label>
+          Website
+          <input
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            value={fields.website}
+            onChange={set('website')}
+          />
+        </label>
+      </div>
+
+      <div className="mt-9 flex flex-col gap-5 border-t border-pearl/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
+        <p className="max-w-sm text-[12px] leading-relaxed text-pearl-faint">
+          We use the details you provide to respond to your enquiry. See our{' '}
+          <a
+            href="/data-protection"
+            className="text-pearl-dim underline underline-offset-4 transition-colors hover:text-gold"
+          >
+            data protection statement
+          </a>
+          .
+        </p>
+
+        <Button type="submit" disabled={status === 'submitting'}>
+          {status === 'submitting' ? 'Sending…' : 'Send enquiry'}
+        </Button>
+      </div>
+
+      {/* ---- Status messaging ---- */}
+      <AnimatePresence>
+        {status !== 'idle' && status !== 'submitting' && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            role="status"
+            aria-live="polite"
+            className={cn(
+              'mt-7 border-l-2 p-5 text-[13.5px] leading-relaxed',
+              status === 'sent' && 'border-gold bg-gold/[0.05] text-pearl',
+              status === 'mailto' && 'border-exec-300 bg-exec/10 text-pearl-dim',
+              status === 'error' && 'border-gold/70 bg-gold/[0.04] text-pearl-dim',
+            )}
+          >
+            {status === 'sent' && (
+              <>
+                <strong className="font-medium text-gold">Enquiry received.</strong>{' '}
+                Thank you — we will come back to you directly.
+              </>
+            )}
+            {status === 'mailto' && (
+              <>
+                <strong className="font-medium text-pearl">
+                  Your email client should now be open
+                </strong>{' '}
+                with the enquiry composed. If nothing happened, email us directly
+                at{' '}
+                <a
+                  href={`mailto:${company.email}`}
+                  className="text-gold underline underline-offset-4"
+                >
+                  {company.email}
+                </a>
+                .
+              </>
+            )}
+            {status === 'error' && (
+              <>
+                <strong className="font-medium text-pearl">
+                  That did not send.
+                </strong>{' '}
+                Please email us directly at{' '}
+                <a
+                  href={`mailto:${company.email}`}
+                  className="text-gold underline underline-offset-4"
+                >
+                  {company.email}
+                </a>{' '}
+                and we will pick it up.
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </form>
+  )
+}

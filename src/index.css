@@ -1,0 +1,222 @@
+@import "tailwindcss";
+
+/* ============================================================
+   TELEFORCE — ENTERPRISE DESIGN SYSTEM
+   People create trust. Technology enables delivery.
+   Process ensures quality.
+   ============================================================ */
+
+@theme {
+  /* --- Brand palette --- */
+  --color-obsidian: #050A14;
+  --color-navy: #0B1B2B;
+  --color-exec: #123A63;
+  --color-gold: #D4AF37;
+  --color-pearl: #EAF2FA;
+
+  /* Tonal extensions derived from the core five */
+  --color-obsidian-900: #03060D;
+  --color-navy-700: #08141F;
+  --color-navy-500: #0F2438;
+  --color-exec-700: #0D2B4A;
+  --color-exec-400: #1B5A8A;
+  --color-exec-300: #2C6FA8;
+  --color-gold-300: #E8CC74;
+  --color-gold-700: #9A7C21;
+  --color-pearl-dim: #9BB0C7;
+  --color-pearl-faint: #7A8FA6;
+
+  /* --- Typography --- */
+  --font-display: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* --- Motion --- */
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* --- Layout --- */
+  --spacing-gutter: 1.5rem;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+
+@layer base {
+  * {
+    border-color: color-mix(in oklab, var(--color-pearl) 10%, transparent);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-obsidian);
+    color: var(--color-pearl);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  p { text-wrap: pretty; }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-gold) 30%, transparent);
+    color: var(--color-pearl);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* Enterprise scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--color-obsidian-900); }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-exec);
+    border: 2px solid var(--color-obsidian-900);
+    border-radius: 6px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-exec-300); }
+}
+
+/* ============================================================
+   COMPONENT PRIMITIVES
+   ============================================================ */
+
+@layer components {
+  /* Micro-label: the technical eyebrow used throughout */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-gold);
+  }
+
+  /* Hairline rule */
+  .hairline {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--color-gold) 55%, transparent) 0%,
+      color-mix(in oklab, var(--color-exec-300) 30%, transparent) 30%,
+      transparent 100%
+    );
+  }
+
+  /* Panel: the base enterprise surface */
+  .panel {
+    background:
+      linear-gradient(
+        160deg,
+        color-mix(in oklab, var(--color-navy) 90%, transparent) 0%,
+        color-mix(in oklab, var(--color-obsidian) 95%, transparent) 100%
+      );
+    border: 1px solid color-mix(in oklab, var(--color-pearl) 8%, transparent);
+  }
+
+  /* Structural grid backdrop */
+  .grid-backdrop {
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--color-pearl) 4%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--color-pearl) 4%, transparent) 1px, transparent 1px);
+    background-size: 72px 72px;
+  }
+
+  /* Fine technical mesh used behind hero */
+  .mesh-backdrop {
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--color-exec-300) 7%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--color-exec-300) 7%, transparent) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+
+@utility text-gradient-pearl {
+  background: linear-gradient(
+    180deg,
+    var(--color-pearl) 0%,
+    color-mix(in oklab, var(--color-pearl) 62%, var(--color-exec-300)) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility text-gradient-gold {
+  background: linear-gradient(135deg, var(--color-gold-300) 0%, var(--color-gold) 45%, var(--color-gold-700) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Radial vignette masks */
+@utility mask-fade-b {
+  mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+}
+
+@utility mask-fade-radial {
+  mask-image: radial-gradient(circle at center, black 42%, transparent 72%);
+}
+
+/* ============================================================
+   KEYFRAMES
+   ============================================================ */
+
+@keyframes tf-pulse-ring {
+  0%   { transform: scale(0.85); opacity: 0.55; }
+  70%  { transform: scale(1.9);  opacity: 0; }
+  100% { transform: scale(1.9);  opacity: 0; }
+}
+
+@keyframes tf-scan {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(1100%); }
+}
+
+@keyframes tf-drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -14px, 0); }
+}
+
+@keyframes tf-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.animate-pulse-ring { animation: tf-pulse-ring 3.2s var(--ease-brand) infinite; }
+.animate-scan       { animation: tf-scan 7s linear infinite; }
+.animate-drift      { animation: tf-drift 9s ease-in-out infinite; }
+.animate-marquee    { animation: tf-marquee 42s linear infinite; }
+
+/* ============================================================
+   ACCESSIBILITY — honour reduced motion everywhere
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
