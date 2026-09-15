@@ -15,6 +15,7 @@ import {
   EmptyState,
   Panel,
   SignIn,
+  GlobeMark,
   cn,
   useCommandPalette,
   type Command,
@@ -143,8 +144,11 @@ export default function App() {
       <header className="border-b border-pearl/10">
         <div className="flex items-center justify-between gap-6 px-6 py-3.5">
           <div className="flex items-center gap-5">
-            <span className="font-display text-[15px] font-semibold tracking-tight text-pearl">
-              Teleforce <span className="text-gold">Admin</span>
+            <span className="flex items-center gap-2.5">
+              <GlobeMark className="h-6 w-6 shrink-0" idPrefix="admin-hdr" />
+              <span className="font-display text-[15px] font-semibold tracking-tight text-pearl">
+                Teleforce <span className="text-gold">Admin</span>
+              </span>
             </span>
             <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-pearl-faint sm:inline">
               HHCRO Insulation

@@ -75,6 +75,18 @@ export class SupabaseRepository implements Repository {
     return toContact(data as ContactRow)
   }
 
+  async claimContactByPhone(
+    campaignId: string,
+    phone: string,
+  ): Promise<Contact | null> {
+    const { data, error } = await this.db.rpc('claim_contact_by_phone', {
+      target_campaign: campaignId,
+      target_phone: phone,
+    })
+    if (error) throw new Error(error.message)
+    return data ? toContact(data as ContactRow) : null
+  }
+
   async getContact(id: string): Promise<Contact | null> {
     const { data, error } = await this.db
       .from('contacts')

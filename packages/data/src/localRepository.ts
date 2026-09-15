@@ -80,6 +80,30 @@ export class LocalRepository implements Repository {
     return claimed
   }
 
+  async claimContactByPhone(
+    campaignId: string,
+    phone: string,
+  ): Promise<Contact | null> {
+    const digits = phone.replace(/\D/g, '').slice(-9)
+    if (digits.length < 9) return null
+
+    const contacts = read<Contact[]>(STORE_KEYS.contacts, [])
+    const match = contacts.find(
+      (c) =>
+        c.campaignId === campaignId &&
+        c.status !== 'dnc' &&
+        c.phone.replace(/\D/g, '').slice(-9) === digits,
+    )
+    if (!match) return null
+
+    const claimed: Contact = { ...match, status: 'assigned', assignedAt: nowIso() }
+    write(
+      STORE_KEYS.contacts,
+      contacts.map((c) => (c.id === claimed.id ? claimed : c)),
+    )
+    return claimed
+  }
+
   async getContact(id: string): Promise<Contact | null> {
     return read<Contact[]>(STORE_KEYS.contacts, []).find((c) => c.id === id) ?? null
   }

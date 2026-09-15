@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Button, Field, Panel, inputClass } from './primitives'
+import { Logo } from './Logo'
 
 /**
  * Sign-in gate.
@@ -36,8 +37,9 @@ export function SignIn({
       <Panel className="w-full max-w-sm p-8">
         <div className="hairline -mx-8 -mt-8 mb-8" />
 
-        <p className="font-display text-[15px] font-semibold tracking-tight text-pearl">
-          Teleforce <span className="text-gold">{product}</span>
+        <Logo variant="reversed" className="h-10 w-auto" showDescriptor={false} />
+        <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-gold">
+          {product}
         </p>
         <h1 className="mt-5 text-[1.4rem] leading-tight text-pearl">
           {heading}

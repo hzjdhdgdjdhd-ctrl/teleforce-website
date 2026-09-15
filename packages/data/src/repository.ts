@@ -18,6 +18,11 @@ export interface Repository {
   /* Contacts */
   nextAvailableContact(campaignId: string, agentId: string): Promise<Contact | null>
   getContact(id: string): Promise<Contact | null>
+  /**
+   * Claim a specific contact by phone number — for a customer ringing back,
+   * or a callback due now. Returns null when nothing matches.
+   */
+  claimContactByPhone(campaignId: string, phone: string): Promise<Contact | null>
   updateContact(id: string, patch: Partial<Contact>): Promise<void>
   listContacts(campaignId: string): Promise<Contact[]>
   addContacts(contacts: Array<Omit<Contact, 'id'>>): Promise<string[]>

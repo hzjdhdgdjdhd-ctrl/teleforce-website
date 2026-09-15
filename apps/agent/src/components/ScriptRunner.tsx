@@ -87,7 +87,7 @@ export function ScriptRunner({
   }
 
   return (
-    <Panel className="flex h-full flex-col overflow-hidden">
+    <Panel className="flex flex-col overflow-hidden">
       {/* Progress + section */}
       <div className="border-b border-pearl/10 px-7 py-4">
         <div className="flex items-center justify-between gap-4">
@@ -106,8 +106,10 @@ export function ScriptRunner({
         </div>
       </div>
 
-      {/* What to say */}
-      <div className="flex-1 overflow-y-auto px-7 py-7">
+      {/* What to say. Not flex-1: stretching this pushed the answers to the
+          bottom of a tall screen, leaving the agent's eye to cross a void
+          between the question and the buttons. */}
+      <div className="overflow-y-auto px-7 pb-6 pt-7">
         {node.checkpoint && (
           <Badge tone="gold" className="mb-5">
             Must say — verbatim
@@ -125,8 +127,8 @@ export function ScriptRunner({
         )}
       </div>
 
-      {/* Answers */}
-      <div className="border-t border-pearl/10 px-7 py-6">
+      {/* Answers, directly beneath the wording that prompts them. */}
+      <div className="px-7 pb-7">
         {node.kind === 'question' && (
           <div className="grid gap-2.5 sm:grid-cols-2">
             {options.map((o, i) => (

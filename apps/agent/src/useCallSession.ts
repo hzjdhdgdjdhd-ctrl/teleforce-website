@@ -84,6 +84,8 @@ export interface CallSession {
   useRebuttal: (id: string) => void
   close: (disposition: Disposition, callbackAt?: string) => Promise<void>
   loadNext: () => Promise<void>
+  /** Pull up a specific contact by number. Returns false when nothing matches. */
+  lookup: (phone: string) => Promise<boolean>
   outcomeSummary: ReturnType<typeof scoreCall> | null
 }
 
@@ -125,23 +127,9 @@ export function useCallSession(
     return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
   }, [startedAt, tick])
 
-  const loadNext = useCallback(async () => {
-    // Guard against overlapping invocations. React StrictMode double-invokes
-    // effects in development, and a slow repository could let a second call
-    // start before the first finishes — either would create an orphan call
-    // record and, worse, claim two contacts for one agent.
-    if (loadingNext.current) return
-    loadingNext.current = true
-
-    setLoading(true)
-    setError(null)
-    setScriptState(null)
-    setCallId(null)
-    setRebuttalsUsed([])
-    setNotes('')
-
-    try {
-      const next = await repo.nextAvailableContact(CAMPAIGN_ID, agentId)
+  /** Shared by the queue and by phone lookup. */
+  const begin = useCallback(
+    async (next: Contact | null) => {
       setContact(next)
 
       if (next) {
@@ -166,17 +154,77 @@ export function useCallSession(
       } else {
         setStartedAt(null)
       }
+    },
+    [repo, agentId, script],
+  )
+
+
+  const loadNext = useCallback(async () => {
+    // Guard against overlapping invocations. React StrictMode double-invokes
+    // effects in development, and a slow repository could let a second call
+    // start before the first finishes — either would create an orphan call
+    // record and, worse, claim two contacts for one agent.
+    if (loadingNext.current) return
+    loadingNext.current = true
+
+    setLoading(true)
+    setError(null)
+    setScriptState(null)
+    setCallId(null)
+    setRebuttalsUsed([])
+    setNotes('')
+
+    try {
+      const next = await repo.nextAvailableContact(CAMPAIGN_ID, agentId)
+      await begin(next)
     } catch (e) {
       setContact(null)
       setStartedAt(null)
       setError(explain(e))
     } finally {
-      // Always in a finally: a thrown error that left this true would jam
-      // the queue permanently, and no amount of retrying would recover it.
       setLoading(false)
       loadingNext.current = false
     }
-  }, [repo, agentId, script])
+  }, [repo, agentId, script, begin])
+
+
+  const lookup = useCallback(
+    async (phone: string): Promise<boolean> => {
+      if (loadingNext.current) return false
+      loadingNext.current = true
+
+      setLoading(true)
+      setError(null)
+      setScriptState(null)
+      setCallId(null)
+      setRebuttalsUsed([])
+      setNotes('')
+
+      try {
+        const found = await repo.claimContactByPhone(CAMPAIGN_ID, phone)
+        if (!found) {
+          setError(
+            `No contact on this campaign matches ${phone}. Check the number, ` +
+              'or ask your supervisor whether it has been uploaded.',
+          )
+          setContact(null)
+          setStartedAt(null)
+          return false
+        }
+        await begin(found)
+        return true
+      } catch (e) {
+        setContact(null)
+        setStartedAt(null)
+        setError(explain(e))
+        return false
+      } finally {
+        setLoading(false)
+        loadingNext.current = false
+      }
+    },
+    [repo, begin],
+  )
 
   useEffect(() => {
     if (!enabled) return
@@ -311,6 +359,7 @@ export function useCallSession(
     useRebuttal,
     close,
     loadNext,
+    lookup,
     outcomeSummary,
   }
 }
@@ -334,7 +383,19 @@ function explain(e: unknown): string {
     return 'Your session has expired. Sign in again to continue.'
   }
   if (/row-level security|42501/i.test(raw)) {
-    return 'You do not have permission to work this queue. Ask your supervisor to check your role.'
+    return (
+      'You do not have permission to work this queue. Ask your supervisor to ' +
+      `check your role. (${raw})`
+    )
+  }
+  if (/being worked by another agent|55006/i.test(raw)) {
+    return 'Another agent is on a call with that number right now.'
+  }
+  if (/invalid input syntax for type uuid/i.test(raw)) {
+    return 'Your account did not load correctly. Sign out and sign in again.'
+  }
+  if (/column .* does not exist|PGRST\d+/i.test(raw)) {
+    return `The database is out of date with this app. Tell your administrator: ${raw}`
   }
   if (/fetch|network|Failed to fetch/i.test(raw)) {
     return 'Cannot reach the server. Check your connection — your current call is safe.'

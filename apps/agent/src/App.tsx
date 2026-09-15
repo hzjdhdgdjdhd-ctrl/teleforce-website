@@ -15,6 +15,7 @@ import {
   StatusDot,
   useCommandPalette,
   SignIn,
+  GlobeMark,
   type Command,
 } from '@teleforce/ui'
 import {
@@ -28,6 +29,7 @@ import { ContactPanel } from './components/ContactPanel'
 import { ScriptRunner } from './components/ScriptRunner'
 import { RebuttalRail } from './components/RebuttalRail'
 import { DispositionBar, quickDispositions } from './components/DispositionBar'
+import { PhoneLookup } from './components/PhoneLookup'
 
 // Supabase when VITE_SUPABASE_URL is set, browser-local otherwise.
 const { repo, backend } = createRepository(
@@ -48,7 +50,13 @@ export default function App() {
   // `null` while the session is still being resolved, so the sign-in form
   // does not flash for an agent who is already authenticated.
   const [signedIn, setSignedIn] = useState<boolean | null>(auth ? null : true)
-  const [agentId, setAgentId] = useState<string>('agent-local')
+  // Null until the profile resolves. Starting a call before then wrote the
+  // placeholder string into calls.agent_id, which is a uuid column — every
+  // insert failed, and the failure only surfaced when the agent tried to
+  // close the call.
+  const [agentId, setAgentId] = useState<string | null>(
+    auth ? null : 'local-agent',
+  )
 
   useEffect(() => {
     if (!auth) return
@@ -59,7 +67,7 @@ export default function App() {
   useEffect(() => {
     if (!signedIn) return
     void repo.currentUser().then((u) => {
-      if (u) setAgentId(u.uid)
+      setAgentId(u?.uid ?? null)
     })
   }, [signedIn])
 
@@ -70,7 +78,12 @@ export default function App() {
     void resolveScript(scriptApi).then(({ script: s }) => setScript(s))
   }, [signedIn])
 
-  const session = useCallSession(repo, agentId, script, signedIn === true)
+  const session = useCallSession(
+    repo,
+    agentId ?? '',
+    script,
+    signedIn === true && agentId !== null,
+  )
   const [rebuttals, setRebuttals] = useState<Rebuttal[]>([])
   const palette = useCommandPalette()
 
@@ -104,6 +117,16 @@ export default function App() {
 
   const commands = useMemo<Command[]>(() => {
     const list: Command[] = [
+      {
+        id: 'lookup',
+        group: 'Call',
+        label: 'Find a contact by phone number',
+        keywords: 'search lookup dial callback ringback number',
+        run: () => {
+          const entered = window.prompt('Phone number')
+          if (entered) void session.lookup(entered)
+        },
+      },
       {
         id: 'next',
         group: 'Call',
@@ -185,9 +208,16 @@ export default function App() {
               title="Cannot load your queue"
               description={session.error}
               action={
-                <Button variant="secondary" onClick={() => void session.loadNext()}>
-                  Try again
-                </Button>
+                <div className="w-full max-w-sm space-y-4">
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    onClick={() => void session.loadNext()}
+                  >
+                    Try again
+                  </Button>
+                  <PhoneLookup onLookup={session.lookup} />
+                </div>
               }
             />
           </Panel>
@@ -197,9 +227,16 @@ export default function App() {
               title="No contacts in your queue"
               description="Your administrator uploads the day's contacts each morning. Once a list is loaded, the next number appears here automatically."
               action={
-                <Button variant="secondary" onClick={() => void session.loadNext()}>
-                  Check again
-                </Button>
+                <div className="w-full max-w-sm space-y-4">
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    onClick={() => void session.loadNext()}
+                  >
+                    Check again
+                  </Button>
+                  <PhoneLookup onLookup={session.lookup} />
+                </div>
               }
             />
           </Panel>
@@ -207,9 +244,9 @@ export default function App() {
           <div className="grid gap-4 lg:grid-cols-[minmax(300px,0.9fr)_minmax(0,1.9fr)_minmax(260px,0.8fr)]">
             <ContactPanel contact={session.contact} elapsed={session.elapsed} />
 
-            <div className="flex min-h-[70vh] flex-col gap-4">
+            <div className="flex flex-col gap-4">
               {session.script && (
-                <div className="min-h-0 flex-1">
+                <div>
                   <ScriptRunner
                     script={script}
                     state={session.script}
@@ -286,8 +323,11 @@ function Header({
   return (
     <header className="flex items-center justify-between gap-6 border-b border-pearl/10 px-5 py-3.5">
       <div className="flex items-center gap-4">
-        <span className="font-display text-[15px] font-semibold tracking-tight text-pearl">
-          Teleforce <span className="text-gold">Agent</span>
+        <span className="flex items-center gap-2.5">
+          <GlobeMark className="h-6 w-6 shrink-0" idPrefix="agent-hdr" />
+          <span className="font-display text-[15px] font-semibold tracking-tight text-pearl">
+            Teleforce <span className="text-gold">Agent</span>
+          </span>
         </span>
         <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-pearl-faint sm:inline">
           HHCRO Insulation
