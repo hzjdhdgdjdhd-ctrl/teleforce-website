@@ -2,19 +2,21 @@
   "name": "teleforce",
   "private": true,
   "type": "module",
-  "description": "Teleforce Technology — human-powered BPO operating system",
+  "description": "Teleforce Technology \u2014 human-powered BPO operating system",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "node scripts/build-assets.mjs && npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build:website": "npm run build -w @teleforce/website",
     "deploy:website": "npm run deploy -w @teleforce/website",
-    "dev:website": "npm run dev -w @teleforce/website"
+    "dev:website": "npm run dev -w @teleforce/website",
+    "assets": "node scripts/build-assets.mjs",
+    "verify": "npm run assets && npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "engines": {
     "node": ">=20"

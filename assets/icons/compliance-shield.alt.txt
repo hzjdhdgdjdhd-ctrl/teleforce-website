@@ -1,0 +1,1 @@
+A shield containing a tick, indicating a passed compliance check

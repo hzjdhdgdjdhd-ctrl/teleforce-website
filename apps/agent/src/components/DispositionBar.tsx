@@ -5,13 +5,15 @@ import { Button } from '@teleforce/ui'
  * Closing a call that never reached the script — no answer, wrong number,
  * engaged. Always available, because most dials end this way.
  */
-const QUICK: Array<{ id: Disposition; label: string; shortcut: string }> = [
+const QUICK: Array<{ id: Disposition; label: string; shortcut?: string }> = [
   { id: 'no_answer', label: 'No answer', shortcut: 'N' },
   { id: 'engaged', label: 'Engaged', shortcut: 'E' },
   { id: 'wrong_number', label: 'Wrong number', shortcut: 'W' },
   { id: 'not_interested', label: 'Not interested', shortcut: 'I' },
   { id: 'callback', label: 'Callback', shortcut: 'B' },
-  { id: 'do_not_call', label: 'Do not call', shortcut: 'D' },
+  // Deliberately no shortcut. Do-not-call is irreversible for that number,
+  // and a mistyped key should never be able to trigger it.
+  { id: 'do_not_call', label: 'Do not call' },
 ]
 
 export function DispositionBar({
@@ -33,7 +35,7 @@ export function DispositionBar({
           variant={d.id === 'do_not_call' ? 'danger' : 'secondary'}
           onClick={() => onDisposition(d.id)}
           disabled={disabled}
-          shortcut={d.shortcut}
+          {...(d.shortcut ? { shortcut: d.shortcut } : {})}
         >
           {d.label}
         </Button>

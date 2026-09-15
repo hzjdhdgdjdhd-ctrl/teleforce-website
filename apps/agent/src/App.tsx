@@ -103,11 +103,16 @@ export default function App() {
       const el = document.activeElement
       if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return
       const match = quickDispositions.find(
-        (d) => d.shortcut.toLowerCase() === e.key.toLowerCase(),
+        (d) => d.shortcut && d.shortcut.toLowerCase() === e.key.toLowerCase(),
       )
       if (match && session.contact) {
         e.preventDefault()
         void session.close(match.id)
+      }
+      if (e.key.toLowerCase() === 'd' && session.contact && !session.dialStarted) {
+        e.preventDefault()
+        session.markDialStarted()
+        return
       }
       if (e.key.toLowerCase() === 'c' && session.contact) {
         e.preventDefault()
@@ -152,7 +157,7 @@ export default function App() {
           id: `disp-${d.id}`,
           group: 'Disposition',
           label: d.label,
-          shortcut: d.shortcut,
+          ...(d.shortcut ? { shortcut: d.shortcut } : {}),
           run: () => void session.close(d.id),
         })
       }
@@ -249,7 +254,12 @@ export default function App() {
           </Panel>
         ) : (
           <div className="grid gap-4 lg:grid-cols-[minmax(300px,0.9fr)_minmax(0,1.9fr)_minmax(260px,0.8fr)]">
-            <ContactPanel contact={session.contact} elapsed={session.elapsed} />
+            <ContactPanel
+              contact={session.contact}
+              elapsed={session.elapsed}
+              dialStarted={session.dialStarted}
+              onDialStarted={session.markDialStarted}
+            />
 
             <div className="flex flex-col gap-4">
               {session.script && (

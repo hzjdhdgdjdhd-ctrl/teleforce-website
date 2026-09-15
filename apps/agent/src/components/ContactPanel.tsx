@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Contact } from '@teleforce/core'
-import { Badge, Button, Panel, StatusDot, cn } from '@teleforce/ui'
+import { Badge, Button, HardPhone, Panel, StatusDot, cn } from '@teleforce/ui'
 
 /**
  * The customer card.
@@ -12,9 +12,14 @@ import { Badge, Button, Panel, StatusDot, cn } from '@teleforce/ui'
 export function ContactPanel({
   contact,
   elapsed,
+  dialStarted,
+  onDialStarted,
 }: {
   contact: Contact
   elapsed: string
+  /** True once the agent has confirmed they dialled on the hard phone. */
+  dialStarted: boolean
+  onDialStarted: () => void
 }) {
   const [copied, setCopied] = useState<string | null>(null)
 
@@ -48,8 +53,8 @@ export function ContactPanel({
       <div className="border-b border-pearl/10 px-6 py-5">
         <div className="flex items-center justify-between gap-3">
           <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-pearl-faint">
-            <StatusDot tone="gold" />
-            On call · {elapsed}
+            <StatusDot tone={dialStarted ? 'ok' : 'neutral'} />
+            {dialStarted ? 'On call' : 'Ready to dial'} · {elapsed}
           </span>
           <Badge tone="neutral">
             {contact.attempts === 0
@@ -84,12 +89,30 @@ export function ContactPanel({
           >
             {copied === 'primary' ? 'Copied' : 'Copy number'}
           </Button>
-          <a
-            href={`tel:${contact.phone}`}
-            className="inline-flex items-center border border-pearl/20 px-3 py-1.5 text-[12.5px] font-medium text-pearl transition-colors hover:border-gold/60 hover:text-gold"
-          >
-            Open in dialler
-          </a>
+        </div>
+
+        {/* The call is placed on the desk phone, not in the browser. Marking
+            the dial is what starts the clock against this attempt, so handle
+            time reflects the conversation rather than how long the agent sat
+            looking at the record. */}
+        <div className="mt-4 border-t border-pearl/8 pt-4">
+          {dialStarted ? (
+            <p className="flex items-center gap-2.5 font-mono text-[10.5px] uppercase tracking-[0.16em] text-ok">
+              <StatusDot tone="ok" />
+              Dial started · {elapsed}
+            </p>
+          ) : (
+            <Button
+              size="sm"
+              variant="primary"
+              fullWidth
+              onClick={onDialStarted}
+              shortcut="D"
+            >
+              <HardPhone className="h-4 w-4" title="" />
+              I have dialled this number
+            </Button>
+          )}
         </div>
 
         {copied === 'failed' && (

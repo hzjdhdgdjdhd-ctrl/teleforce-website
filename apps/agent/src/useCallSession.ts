@@ -73,6 +73,9 @@ export interface CallSession {
   contact: Contact | null
   /** Set when the queue could not be loaded. Cleared on a successful retry. */
   error: string | null
+  /** True once the agent confirms they dialled on the hard phone. */
+  dialStarted: boolean
+  markDialStarted: () => void
   script: ScriptState | null
   elapsed: string
   loading: boolean
@@ -108,6 +111,7 @@ export function useCallSession(
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [startedAt, setStartedAt] = useState<number | null>(null)
+  const [dialStarted, setDialStarted] = useState(false)
   const [tick, setTick] = useState(0)
   const closing = useRef(false)
   const loadingNext = useRef(false)
@@ -173,6 +177,7 @@ export function useCallSession(
     setCallId(null)
     setRebuttalsUsed([])
     setNotes('')
+    setDialStarted(false)
 
     try {
       const next = await repo.nextAvailableContact(CAMPAIGN_ID, agentId)
@@ -199,6 +204,7 @@ export function useCallSession(
       setCallId(null)
       setRebuttalsUsed([])
       setNotes('')
+      setDialStarted(false)
 
       try {
         const found = await repo.claimContactByPhone(CAMPAIGN_ID, phone)
@@ -247,6 +253,15 @@ export function useCallSession(
     },
     [],
   )
+
+  const markDialStarted = useCallback(() => {
+    setDialStarted((already) => {
+      // Reset the clock to the moment of dialling, so handle time measures
+      // the conversation rather than how long the record sat open.
+      if (!already) setStartedAt(Date.now())
+      return true
+    })
+  }, [])
 
   const useRebuttal = useCallback((id: string) => {
     setRebuttalsUsed((prev) => (prev.includes(id) ? prev : [...prev, id]))
@@ -346,6 +361,8 @@ export function useCallSession(
   return {
     contact,
     error,
+    dialStarted,
+    markDialStarted,
     script: scriptState,
     elapsed,
     loading,
