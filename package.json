@@ -20,7 +20,7 @@
     "deploy": "node scripts/deploy-all.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "devDependencies": {
     "supabase": "^2.117.0"

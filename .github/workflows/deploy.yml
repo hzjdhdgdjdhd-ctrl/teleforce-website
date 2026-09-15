@@ -68,4 +68,10 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/${{ matrix.app }}
-          command: pages deploy dist --project-name=teleforce-${{ matrix.app }}
+          # These are Workers, not Pages projects. Each app has a
+          # wrangler.jsonc with an edge script (noindex headers, canonical
+          # host redirect), an assets binding and a custom domain route —
+          # `wrangler deploy` is what reads that. `pages deploy` would ignore
+          # the config entirely, drop the edge script, and try to create Pages
+          # projects competing for the same hostnames.
+          command: deploy
