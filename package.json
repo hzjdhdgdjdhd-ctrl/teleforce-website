@@ -16,7 +16,8 @@
     "deploy:website": "npm run deploy -w @teleforce/website",
     "dev:website": "npm run dev -w @teleforce/website",
     "assets": "node scripts/build-assets.mjs",
-    "verify": "npm run assets && npm run typecheck && npm run lint && npm run test && npm run build"
+    "verify": "npm run assets && npm run typecheck && npm run lint && npm run test && npm run build",
+    "deploy": "node scripts/deploy-all.mjs"
   },
   "engines": {
     "node": ">=20"
