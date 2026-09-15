@@ -72,6 +72,8 @@ export async function resolveScript(
 
 export interface CallSession {
   contact: Contact | null
+  /** Set when the queue could not be loaded. Cleared on a successful retry. */
+  error: string | null
   script: ScriptState | null
   elapsed: string
   loading: boolean
@@ -89,6 +91,13 @@ export function useCallSession(
   repo: Repository,
   agentId: string,
   script: CallScript = hhcroScript,
+  /**
+   * Hold off until the session is known. Claiming a contact before auth
+   * resolves sends an unauthenticated request, which the database correctly
+   * refuses — and an agent should never see that error for a call they had
+   * not yet started.
+   */
+  enabled = true,
 ): CallSession {
   const [contact, setContact] = useState<Contact | null>(null)
   const [scriptState, setScriptState] = useState<ScriptState | null>(null)
@@ -96,6 +105,7 @@ export function useCallSession(
   const [rebuttalsUsed, setRebuttalsUsed] = useState<string[]>([])
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [tick, setTick] = useState(0)
   const closing = useRef(false)
@@ -124,44 +134,54 @@ export function useCallSession(
     loadingNext.current = true
 
     setLoading(true)
+    setError(null)
     setScriptState(null)
     setCallId(null)
     setRebuttalsUsed([])
     setNotes('')
 
-    const next = await repo.nextAvailableContact(CAMPAIGN_ID, agentId)
-    setContact(next)
+    try {
+      const next = await repo.nextAvailableContact(CAMPAIGN_ID, agentId)
+      setContact(next)
 
-    if (next) {
-      const state = startCall(script)
-      setScriptState(state)
-      const started = Date.now()
-      setStartedAt(started)
+      if (next) {
+        const state = startCall(script)
+        setScriptState(state)
+        const started = Date.now()
+        setStartedAt(started)
 
-      const id = await repo.createCall({
-        campaignId: CAMPAIGN_ID,
-        contactId: next.id,
-        agentId,
-        scriptId: script.id,
-        scriptVersion: script.version,
-        startedAt: new Date(started).toISOString(),
-        answers: [],
-        checkpointsReached: [],
-        rebuttalsUsed: [],
-      })
-      setCallId(id)
-      await repo.updateContact(next.id, { status: 'in_call' })
-    } else {
+        const id = await repo.createCall({
+          campaignId: CAMPAIGN_ID,
+          contactId: next.id,
+          agentId,
+          scriptId: script.id,
+          scriptVersion: script.version,
+          startedAt: new Date(started).toISOString(),
+          answers: [],
+          checkpointsReached: [],
+          rebuttalsUsed: [],
+        })
+        setCallId(id)
+        await repo.updateContact(next.id, { status: 'in_call' })
+      } else {
+        setStartedAt(null)
+      }
+    } catch (e) {
+      setContact(null)
       setStartedAt(null)
+      setError(explain(e))
+    } finally {
+      // Always in a finally: a thrown error that left this true would jam
+      // the queue permanently, and no amount of retrying would recover it.
+      setLoading(false)
+      loadingNext.current = false
     }
-
-    setLoading(false)
-    loadingNext.current = false
-  }, [repo, agentId])
+  }, [repo, agentId, script])
 
   useEffect(() => {
+    if (!enabled) return
     void loadNext()
-  }, [loadNext])
+  }, [loadNext, enabled])
 
   const answer = useCallback(
     (input: { optionId?: string; value?: string }) => {
@@ -269,6 +289,8 @@ export function useCallSession(
         })
 
         await loadNext()
+      } catch (e) {
+        setError(explain(e))
       } finally {
         closing.current = false
       }
@@ -278,6 +300,7 @@ export function useCallSession(
 
   return {
     contact,
+    error,
     script: scriptState,
     elapsed,
     loading,
@@ -293,3 +316,28 @@ export function useCallSession(
 }
 
 export { CAMPAIGN_ID }
+
+
+/**
+ * Translate an error into something an agent can act on.
+ *
+ * "not a member of campaign hhcro" is accurate and useless on a call floor;
+ * what the agent needs to know is who to ask.
+ */
+function explain(e: unknown): string {
+  const raw = e instanceof Error ? e.message : String(e)
+
+  if (/not a member of campaign/i.test(raw)) {
+    return 'Your account is not assigned to this campaign. Ask your supervisor to add you.'
+  }
+  if (/JWT|401|not signed in|invalid token/i.test(raw)) {
+    return 'Your session has expired. Sign in again to continue.'
+  }
+  if (/row-level security|42501/i.test(raw)) {
+    return 'You do not have permission to work this queue. Ask your supervisor to check your role.'
+  }
+  if (/fetch|network|Failed to fetch/i.test(raw)) {
+    return 'Cannot reach the server. Check your connection — your current call is safe.'
+  }
+  return raw
+}

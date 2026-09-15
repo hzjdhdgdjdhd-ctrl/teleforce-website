@@ -70,7 +70,7 @@ export default function App() {
     void resolveScript(scriptApi).then(({ script: s }) => setScript(s))
   }, [signedIn])
 
-  const session = useCallSession(repo, agentId, script)
+  const session = useCallSession(repo, agentId, script, signedIn === true)
   const [rebuttals, setRebuttals] = useState<Rebuttal[]>([])
   const palette = useCommandPalette()
 
@@ -169,6 +169,7 @@ export default function App() {
         elapsed={session.elapsed}
         hasCall={Boolean(session.contact)}
         backend={backend}
+        {...(auth ? { onSignOut: () => void auth.signOut() } : {})}
       />
 
       <main className="flex-1 px-5 pb-5">
@@ -177,6 +178,18 @@ export default function App() {
             <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-pearl-faint">
               Loading queue…
             </span>
+          </Panel>
+        ) : session.error ? (
+          <Panel className="flex h-[70vh] items-center justify-center">
+            <EmptyState
+              title="Cannot load your queue"
+              description={session.error}
+              action={
+                <Button variant="secondary" onClick={() => void session.loadNext()}>
+                  Try again
+                </Button>
+              }
+            />
           </Panel>
         ) : !session.contact ? (
           <Panel className="flex h-[70vh] items-center justify-center">
@@ -263,10 +276,12 @@ function Header({
   elapsed,
   hasCall,
   backend,
+  onSignOut,
 }: {
   elapsed: string
   hasCall: boolean
   backend: 'supabase' | 'local'
+  onSignOut?: () => void
 }) {
   return (
     <header className="flex items-center justify-between gap-6 border-b border-pearl/10 px-5 py-3.5">
@@ -296,6 +311,11 @@ function Header({
         <span className="hidden font-mono text-[10px] uppercase tracking-[0.16em] text-pearl-faint md:inline">
           ⌘K commands
         </span>
+        {onSignOut && (
+          <Button size="sm" variant="ghost" onClick={onSignOut}>
+            Sign out
+          </Button>
+        )}
       </div>
     </header>
   )
