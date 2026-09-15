@@ -45,7 +45,8 @@ export const company = {
   phone: '' as string, // TODO: add a published business number, or leave blank to hide.
 
   /* ---- Web ---- */
-  domain: 'teleforce.tech', // TODO: confirm the live domain.
+  domain: 'teleforcetechnology.org',
+  siteUrl: 'https://teleforcetechnology.org',
 
   /* ---- Operating footprint ---- */
   deliveryCentre: 'Siliguri, West Bengal, India',

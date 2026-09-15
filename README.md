@@ -200,11 +200,52 @@ git config --local core.sshCommand "ssh -F /dev/null -o IdentitiesOnly=yes -i ~/
 
 ## Deployment
 
-Static SPA — build `dist/` and serve it. Deep links need a catch-all rewrite to
-`index.html`; configs for the two common hosts are included:
+Live domain: **https://teleforcetechnology.org**
+Registered with Ultahost, Inc. on 15 September 2026.
 
-- Netlify → `public/_redirects`
-- Vercel → `vercel.json`
+### Primary: Cloudflare Pages (recommended)
 
-Output is split into three cached chunks (app ≈ 28 kB, Framer Motion ≈ 44 kB,
-React ≈ 79 kB gzipped) so a copy edit does not invalidate the vendor bundles.
+The site is a static SPA, so Cloudflare Pages serves it from a global CDN for
+free, issues SSL automatically, and redeploys on every push to `main`.
+
+**Build settings in the Cloudflare dashboard:**
+
+| Field | Value |
+|-------|-------|
+| Framework preset | None (or Vite) |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+| Node version | 20 or later |
+
+Routing and headers are configured by files in `public/`, which Vite copies
+into `dist/` at build time:
+
+- `_redirects` — `/* /index.html 200`, so deep links like `/data-protection`
+  resolve instead of 404ing.
+- `_headers` — security headers, plus immutable caching on `/assets/*` and
+  no-cache on `index.html`.
+
+**DNS:** change the nameservers at Ultahost to the pair Cloudflare assigns.
+Do not point an A record at Pages — Cloudflare manages the records itself once
+the domain is added as a custom domain on the project.
+
+### Fallback: Apache / cPanel (UltaHost hosting)
+
+If the site is served from UltaHost hosting instead, upload the **contents** of
+`dist/` (not the folder) into `public_html`. `.htaccess` is included in the
+build output and handles SPA routing, HTTPS and www redirects, compression,
+caching and security headers.
+
+> The HTTPS redirect in `.htaccess` is active. Install the SSL certificate in
+> cPanel *before* uploading, or visitors will hit a certificate warning.
+
+### Bundle
+
+Three cached chunks — app ≈ 28 kB, Framer Motion ≈ 44 kB, React ≈ 79 kB
+gzipped — so a copy edit does not invalidate the vendor bundles.
+
+### SEO files
+
+`sitemap.xml` is generated from the route table by `scripts/generate-sitemap.mjs`,
+which runs automatically as part of `npm run build`. Add a route there when you
+add a page.

@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
 
-# TODO: replace with the live domain before launch.
-Sitemap: https://teleforce.tech/sitemap.xml
+Sitemap: https://teleforcetechnology.org/sitemap.xml

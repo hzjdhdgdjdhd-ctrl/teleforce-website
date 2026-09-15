@@ -1,0 +1,83 @@
+# ============================================================
+# Teleforce Technology — Apache configuration (cPanel / UltaHost)
+# Upload this together with the contents of dist/ into public_html
+# ============================================================
+
+# ---- Force HTTPS and a single canonical hostname -----------
+# Everything redirects to https://teleforcetechnology.org
+# Enable only AFTER the SSL certificate is issued, otherwise
+# visitors hit a certificate warning.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # http -> https
+  RewriteCond %{HTTPS} !=on
+  RewriteRule ^(.*)$ https://teleforcetechnology.org/$1 [R=301,L]
+
+  # www -> non-www
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+</IfModule>
+
+# ---- Single Page Application routing -----------------------
+# Without this, /services, /data-protection etc. return 404 on
+# a hard refresh or a direct link, because no such file exists.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Serve real files and directories as-is
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Everything else is handled by the React router
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# ---- Compression -------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css
+  AddOutputFilterByType DEFLATE application/javascript application/json
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# ---- Caching -----------------------------------------------
+# Hashed asset filenames change on every build, so they are safe
+# to cache hard. index.html must never be cached, or visitors keep
+# loading an old build that points at deleted asset files.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css                "access plus 1 year"
+  ExpiresByType application/javascript  "access plus 1 year"
+  ExpiresByType image/svg+xml           "access plus 1 year"
+  ExpiresByType font/woff2              "access plus 1 year"
+</IfModule>
+
+<FilesMatch "\.(css|js|svg|woff2)$">
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+
+<FilesMatch "^(index\.html|sitemap\.xml|robots\.txt)$">
+  Header set Cache-Control "no-cache, must-revalidate"
+</FilesMatch>
+
+# ---- Security headers --------------------------------------
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
+# ---- Correct MIME types ------------------------------------
+<IfModule mod_mime.c>
+  AddType application/javascript .js
+  AddType image/svg+xml          .svg
+  AddType font/woff2             .woff2
+</IfModule>
+
+# ---- Hide dotfiles -----------------------------------------
+<FilesMatch "^\.">
+  Require all denied
+</FilesMatch>
