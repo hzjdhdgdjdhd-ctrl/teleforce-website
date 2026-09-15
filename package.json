@@ -7,9 +7,9 @@
     "dev": "vite",
     "build": "node scripts/generate-sitemap.mjs && tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview",
+    "preview": "npm run build && wrangler dev",
     "sitemap": "node scripts/generate-sitemap.mjs",
-    "deploy": "npm run build && wrangler pages deploy dist --project-name=teleforce-website --branch=main",
+    "deploy": "npm run build && wrangler deploy",
     "cf:login": "wrangler login",
     "cf:whoami": "wrangler whoami"
   },
@@ -20,6 +20,7 @@
     "react-router-dom": "^7.18.3"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.54.9",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",

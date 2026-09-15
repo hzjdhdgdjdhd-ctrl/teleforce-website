@@ -1,0 +1,17 @@
+{
+  // Teleforce Technology — static site on Cloudflare Workers Assets.
+  //
+  // Deployed as a Worker rather than classic Pages: Cloudflare has folded
+  // Pages into Workers, and Workers Assets provides first-class SPA routing
+  // via `not_found_handling`. That replaces the old `_redirects` rule
+  // (`/* /index.html 200`), which the current validator rejects as an
+  // infinite loop — correctly, since /index.html itself matches /*.
+  "name": "teleforce-website",
+  "compatibility_date": "2026-09-15",
+  "assets": {
+    "directory": "./dist",
+    // Any path that does not match a file is served index.html, so
+    // /services, /data-protection etc. resolve on a hard refresh.
+    "not_found_handling": "single-page-application"
+  }
+}
