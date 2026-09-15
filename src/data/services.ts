@@ -1,9 +1,12 @@
 /**
  * Service lines.
  *
- * VERIFY BEFORE LAUNCH: every line below should describe work Teleforce
- * actually staffs and delivers today. Remove anything aspirational — an
- * enterprise buyer will ask you to evidence it in the first call.
+ * CONFIRMED by the business on 15 September 2026: all six lines describe work Teleforce
+ * actually staffs and delivers today.
+ *
+ * These are the first claims an enterprise buyer will ask you to evidence, so
+ * if a line ever stops being true, change it here rather than leaving it to be
+ * discovered in a procurement call.
  */
 
 export interface Service {

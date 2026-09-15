@@ -54,8 +54,10 @@ export interface Measure {
 }
 
 /**
- * VERIFY BEFORE LAUNCH: each measure below must be something you genuinely
- * operate. Delete any line you cannot demonstrate to a client auditor.
+ * CONFIRMED by the business on 15 September 2026: each measure below is operated in practice.
+ *
+ * A client auditor will ask for evidence of these before anything else on the
+ * page. If a control lapses, remove the line here first.
  */
 export const measures: readonly Measure[] = [
   {

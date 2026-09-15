@@ -23,19 +23,27 @@ it. Several values are placeholders, and they are all marked `TODO:` in source.
 grep -rn "TODO:" src/
 ```
 
-### Must fix before launch
+### Pre-launch checklist
+
+Resolved 15 September 2026:
+
+| ✅ | Item |
+|----|------|
+| ✓ | Logo descriptor corrected to `SYSTEMS & SERVICES` (artwork read `SYETEMS`) |
+| ✓ | Live domain confirmed and wired in — `teleforcetechnology.org` |
+| ✓ | Service lines confirmed accurate by the business |
+| ✓ | Technology capabilities confirmed accurate by the business |
+| ✓ | Data protection safeguards confirmed operated in practice |
+| ✓ | Contact addresses moved off Gmail to the domain |
+
+Still open:
 
 | # | Item | Where |
 |---|------|-------|
-| 1 | **Logo descriptor reads `SYETEMS & SERVICES`** — reproduced verbatim from the supplied artwork. If that is a typo for `SYSTEMS`, change the one constant. | `src/assets/Logo.tsx` → `DESCRIPTOR` |
-| 2 | **Contact email is a Gmail address.** A personal Gmail on an enterprise BPO site undercuts every trust signal the rest of the site builds. Move to a domain address. | `src/config/company.ts` → `email` |
-| 3 | **No published phone number.** Left blank rather than invented; the UI hides the field while it is empty. | `src/config/company.ts` → `phone` |
-| 4 | **Confirm the live domain** (used in `robots.txt` and structured data). | `src/config/company.ts`, `public/robots.txt`, `index.html` |
-| 5 | **Verify every service line** describes work you actually staff today. | `src/data/services.ts` |
-| 6 | **Verify every technology capability.** This is the easiest section to over-claim. | `src/data/technology.ts` |
-| 7 | **Verify every safeguard** in the data protection measures. Delete any line you could not demonstrate to a client auditor. | `src/data/dataProtection.ts` → `measures` |
-| 8 | **Confirm the coverage hours** you will commit to contractually. | `src/config/company.ts` → `coverage` |
-| 9 | **Wire up the contact form** (see below). | `.env` |
+| 1 | **Cloudflare Email Routing must stay enabled.** `contact@` and `privacy@` are forwarding aliases, not mailboxes. If routing is disabled, mail to the addresses printed across the site bounces silently. | Cloudflare → Email → Email Routing |
+| 2 | **No published phone number.** Left blank rather than invented; the UI hides the field while it is empty. | `src/config/company.ts` → `phone` |
+| 3 | **Confirm the coverage hours** you commit to contractually. Currently a stated default. | `src/config/company.ts` → `coverage` |
+| 4 | **Wire up the contact form** (see below). Until then it composes into the visitor's mail client rather than posting anywhere. | `.env.local` |
 
 ### Company data
 

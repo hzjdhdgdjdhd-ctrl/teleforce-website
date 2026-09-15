@@ -1,8 +1,10 @@
 /**
  * The technology capability shown in the Frontend + Backend section.
  *
- * VERIFY BEFORE LAUNCH: list only what your engineers genuinely build and
- * support. This section is the easiest place on the site to over-claim.
+ * CONFIRMED by the business on 15 September 2026.
+ *
+ * This section remains the easiest place on the site to over-claim: keep it to
+ * what your engineers genuinely build and support.
  */
 
 export interface TechLayer {

@@ -36,12 +36,12 @@ export const company = {
     country: 'India',
   },
 
-  /* ---- Contact ---- */
-  email: 'arid0202@gmail.com',
-  // TODO: replace with a monitored corporate address before launch,
-  // e.g. contact@teleforce.tech — a Gmail address weakens enterprise credibility.
-  dataProtectionEmail: 'arid0202@gmail.com',
-  // TODO: add a dedicated inbox for data protection enquiries.
+  /* ---- Contact ----
+     Both addresses are Cloudflare Email Routing aliases on the domain; they
+     forward to the monitored inbox. Routing must stay enabled in Cloudflare
+     (Email → Email Routing) or mail to these addresses will bounce. */
+  email: 'contact@teleforcetechnology.org',
+  dataProtectionEmail: 'privacy@teleforcetechnology.org',
   phone: '' as string, // TODO: add a published business number, or leave blank to hide.
 
   /* ---- Web ---- */
