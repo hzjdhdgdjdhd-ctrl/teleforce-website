@@ -4,15 +4,24 @@ import HumanNetwork from '@/components/visuals/HumanNetwork'
 import { ButtonLink } from '@/components/ui/Button'
 import { Container, Eyebrow } from '@/components/ui/Section'
 import { company } from '@/config/company'
+import { useSection } from '@/hooks/useSiteContent'
 
-const HEADLINE = [
-  { text: 'Human Expertise.', accent: false },
-  { text: 'Secure Operations.', accent: false },
-  { text: 'Business Growth.', accent: true },
-]
+/** Shipped copy. The CMS overrides these; it never replaces the file. */
+const DEFAULT_HERO = {
+  eyebrow: `Business Process Outsourcing · ${company.primaryMarket}`,
+  headlineLines: ['Human Expertise.', 'Secure Operations.', 'Business Growth.'],
+  lede:
+    `Teleforce runs business operations for ${company.primaryMarket} ` +
+    'organisations with trained, named teams — not automated queues. We take ' +
+    "ownership of the processes that consume your people's time, and we run " +
+    'them to a documented standard you can inspect.',
+  primaryCta: 'Start a conversation',
+  secondaryCta: 'Explore our services',
+}
 
 export default function Hero() {
   const reduced = useReducedMotion()
+  const hero = useSection('hero', DEFAULT_HERO)
 
   const rise = (delay: number) =>
     reduced
@@ -64,24 +73,21 @@ export default function Hero() {
         <div className="flex min-h-[calc(100vh-180px)] flex-col justify-center py-16 lg:py-24">
           <div className="max-w-[46rem]">
             <motion.div {...rise(0.05)}>
-              <Eyebrow>
-                Business Process Outsourcing · {company.primaryMarket}
-              </Eyebrow>
+              <Eyebrow>{hero.eyebrow}</Eyebrow>
             </motion.div>
 
             <h1 className="mt-8 text-[clamp(2.4rem,6.4vw,4.75rem)] font-semibold leading-[1.04] tracking-[-0.035em]">
-              {HEADLINE.map((line, i) => (
-                <motion.span
-                  key={line.text}
-                  className="block"
-                  {...rise(0.16 + i * 0.11)}
-                >
+              {hero.headlineLines.map((line, i) => (
+                <motion.span key={line} className="block" {...rise(0.16 + i * 0.11)}>
+                  {/* The last line carries the gold, whatever it says. */}
                   <span
                     className={
-                      line.accent ? 'text-gradient-gold' : 'text-gradient-pearl'
+                      i === hero.headlineLines.length - 1
+                        ? 'text-gradient-gold'
+                        : 'text-gradient-pearl'
                     }
                   >
-                    {line.text}
+                    {line}
                   </span>
                 </motion.span>
               ))}
@@ -91,10 +97,7 @@ export default function Hero() {
               className="mt-8 max-w-[34rem] text-[16px] leading-[1.8] text-pearl-dim md:text-[17px]"
               {...rise(0.54)}
             >
-              Teleforce runs business operations for {company.primaryMarket}{' '}
-              organisations with trained, named teams — not automated queues. We
-              take ownership of the processes that consume your people's time,
-              and we run them to a documented standard you can inspect.
+              {hero.lede}
             </motion.p>
 
             <motion.div
@@ -102,10 +105,10 @@ export default function Hero() {
               {...rise(0.66)}
             >
               <ButtonLink to="/contact" variant="primary">
-                Start a conversation
+                {hero.primaryCta}
               </ButtonLink>
               <ButtonLink to="/services" variant="secondary">
-                Explore our services
+                {hero.secondaryCta}
               </ButtonLink>
             </motion.div>
 

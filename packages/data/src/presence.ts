@@ -75,7 +75,11 @@ const HEARTBEAT_MS = 30_000
 export class PresenceClient {
   private timer: number | null = null
 
-  constructor(private readonly repo: SupabaseRepository) {}
+  private readonly repo: SupabaseRepository
+
+  constructor(repo: SupabaseRepository) {
+    this.repo = repo
+  }
 
   async report(update: PresenceUpdate): Promise<void> {
     const { error } = await this.repo.client.rpc('report_presence', {
@@ -123,7 +127,11 @@ export class PresenceClient {
 /* ------------------------------------------------------------------ */
 
 export class WallboardClient {
-  constructor(private readonly repo: SupabaseRepository) {}
+  private readonly repo: SupabaseRepository
+
+  constructor(repo: SupabaseRepository) {
+    this.repo = repo
+  }
 
   async metrics(campaignId = 'hhcro'): Promise<WallboardMetrics> {
     const { data, error } = await this.repo.client.rpc('wallboard_metrics', {

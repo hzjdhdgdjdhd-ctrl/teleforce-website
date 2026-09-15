@@ -7,6 +7,7 @@ import {
   SupabaseAuth,
   SupabaseRepository,
   SupabaseScripts,
+  SupabaseCms,
 } from '@teleforce/data'
 import {
   Badge,
@@ -26,6 +27,7 @@ import { Upload } from './pages/Upload'
 import { Leads } from './pages/Leads'
 import { Users } from './pages/Users'
 import { Questions } from './pages/Questions'
+import { Cms } from './pages/Cms'
 
 const { repo, backend } = createRepository(
   import.meta.env as Record<string, string | undefined>,
@@ -34,14 +36,16 @@ const supa = repo instanceof SupabaseRepository ? repo : null
 const auth = supa ? new SupabaseAuth(supa) : null
 const adminApi = supa ? new SupabaseAdmin(supa) : null
 const scriptApi = supa ? new SupabaseScripts(supa) : null
+const cmsApi = supa ? new SupabaseCms(supa) : null
 
-type Tab = 'upload' | 'leads' | 'questions' | 'users'
+type Tab = 'upload' | 'leads' | 'questions' | 'website' | 'users'
 
 /** `adminOnly` tabs are hidden from supervisors; RLS refuses them regardless. */
 const TABS: Array<{ id: Tab; label: string; adminOnly?: boolean }> = [
   { id: 'upload', label: 'Upload contacts' },
   { id: 'leads', label: 'Leads' },
   { id: 'questions', label: 'Questions & script' },
+  { id: 'website', label: 'Website', adminOnly: true },
   { id: 'users', label: 'Users & agents', adminOnly: true },
 ]
 
@@ -220,6 +224,7 @@ export default function App() {
         )}
         {tab === 'leads' && <Leads repo={repo} />}
         {tab === 'questions' && <Questions scripts={scriptApi} />}
+        {tab === 'website' && <Cms cms={cmsApi} />}
         {tab === 'users' && (
           <Users admin={adminApi} currentUserId={profile?.uid ?? ''} />
         )}

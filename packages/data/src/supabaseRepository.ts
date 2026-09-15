@@ -440,7 +440,11 @@ export interface AuthResult {
  * a shift needs to know what to do, not read a stack trace.
  */
 export class SupabaseAuth {
-  constructor(private readonly repo: SupabaseRepository) {}
+  private readonly repo: SupabaseRepository
+
+  constructor(repo: SupabaseRepository) {
+    this.repo = repo
+  }
 
   async signIn(email: string, password: string): Promise<AuthResult> {
     const { error } = await this.repo.client.auth.signInWithPassword({
@@ -518,7 +522,11 @@ export interface AdminResult {
  * to a browser.
  */
 export class SupabaseAdmin {
-  constructor(private readonly repo: SupabaseRepository) {}
+  private readonly repo: SupabaseRepository
+
+  constructor(repo: SupabaseRepository) {
+    this.repo = repo
+  }
 
   async listUsers(): Promise<ManagedUser[]> {
     const { data, error } = await this.repo.client
@@ -600,7 +608,11 @@ export interface StoredScript {
 }
 
 export class SupabaseScripts {
-  constructor(private readonly repo: SupabaseRepository) {}
+  private readonly repo: SupabaseRepository
+
+  constructor(repo: SupabaseRepository) {
+    this.repo = repo
+  }
 
   async list(campaignId: string): Promise<StoredScript[]> {
     const { data, error } = await this.repo.client
@@ -698,7 +710,11 @@ export interface QaQueueRow {
 }
 
 export class SupabaseQa {
-  constructor(private readonly repo: SupabaseRepository) {}
+  private readonly repo: SupabaseRepository
+
+  constructor(repo: SupabaseRepository) {
+    this.repo = repo
+  }
 
   async queue(options: {
     campaignId?: string

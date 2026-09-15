@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Layout from '@/components/layout/Layout'
+import { SiteContentProvider } from '@/hooks/useSiteContent'
 import ScrollManager from '@/components/layout/ScrollManager'
 import Home from '@/pages/Home'
 import Services from '@/pages/Services'
@@ -13,6 +14,7 @@ import NotFound from '@/pages/NotFound'
 export default function App() {
   return (
     <BrowserRouter>
+      <SiteContentProvider>
       <ScrollManager />
       <Layout>
         <Routes>
@@ -26,6 +28,7 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Layout>
+      </SiteContentProvider>
     </BrowserRouter>
   )
 }
