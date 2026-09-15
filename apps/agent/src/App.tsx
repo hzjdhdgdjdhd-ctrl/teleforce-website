@@ -8,6 +8,7 @@ import {
   Panel,
   StatusDot,
   useCommandPalette,
+  SignIn,
   type Command,
 } from '@teleforce/ui'
 import {
@@ -15,7 +16,6 @@ import {
   SupabaseAuth,
   SupabaseRepository,
 } from '@teleforce/data'
-import { SignIn } from './components/SignIn'
 import { useCallSession } from './useCallSession'
 import { ContactPanel } from './components/ContactPanel'
 import { ScriptRunner } from './components/ScriptRunner'
@@ -145,7 +145,7 @@ export default function App() {
   }
 
   if (!signedIn && auth) {
-    return <SignIn onSignIn={(e, p) => auth.signIn(e, p)} />
+    return <SignIn product="Agent" onSignIn={(e, p) => auth.signIn(e, p)} />
   }
 
   return (

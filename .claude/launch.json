@@ -20,6 +20,17 @@
         "@teleforce/agent"
       ],
       "port": 5174
+    },
+    {
+      "name": "teleforce-admin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "-w",
+        "@teleforce/admin"
+      ],
+      "port": 5175
     }
   ]
 }

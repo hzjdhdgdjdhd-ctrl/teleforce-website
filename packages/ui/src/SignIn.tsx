@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Button, Field, Panel, inputClass } from '@teleforce/ui'
+import { Button, Field, Panel, inputClass } from './primitives'
 
 /**
  * Sign-in gate.
@@ -9,8 +9,13 @@ import { Button, Field, Panel, inputClass } from '@teleforce/ui'
  */
 export function SignIn({
   onSignIn,
+  product,
+  heading = 'Sign in to start your shift',
 }: {
   onSignIn: (email: string, password: string) => Promise<{ ok: boolean; message?: string }>
+  /** Shown beside the wordmark, e.g. "Agent" or "Admin". */
+  product: string
+  heading?: string
 }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -32,10 +37,10 @@ export function SignIn({
         <div className="hairline -mx-8 -mt-8 mb-8" />
 
         <p className="font-display text-[15px] font-semibold tracking-tight text-pearl">
-          Teleforce <span className="text-gold">Agent</span>
+          Teleforce <span className="text-gold">{product}</span>
         </p>
         <h1 className="mt-5 text-[1.4rem] leading-tight text-pearl">
-          Sign in to start your shift
+          {heading}
         </h1>
 
         <form onSubmit={submit} className="mt-7 space-y-5">
