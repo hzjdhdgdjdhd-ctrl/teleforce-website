@@ -203,6 +203,22 @@ git config --local core.sshCommand "ssh -F /dev/null -o IdentitiesOnly=yes -i ~/
 Live domain: **https://teleforcetechnology.org**
 Registered with Ultahost, Inc. on 15 September 2026.
 
+### Canonical hostname
+
+`worker/index.ts` is the edge entry point. It issues a 301 for anything not on
+`https://teleforcetechnology.org`, preserving path and query:
+
+- `www.teleforcetechnology.org/...` -> `teleforcetechnology.org/...`
+- `http://...` -> `https://...`
+
+It only redirects hostnames we own, so an unexpected `Host` header cannot be
+bounced to the canonical domain — that would make the Worker an open redirect.
+
+`assets.run_worker_first` is `true` in `wrangler.jsonc` and must stay that way.
+Without it, a request matching a real file is served straight from the asset
+store and the Worker never runs, so `www` would serve the site instead of
+redirecting.
+
 ### Deploying with Wrangler (fastest path)
 
 Wrangler uploads `dist/` straight to Cloudflare Pages. It needs no GitHub

@@ -8,11 +8,21 @@
   // infinite loop — correctly, since /index.html itself matches /*.
   "name": "teleforce-website",
   "compatibility_date": "2026-09-15",
+  // Edge entry point — canonicalises the hostname, then serves assets.
+  "main": "./worker/index.ts",
+
   "assets": {
     "directory": "./dist",
     // Any path that does not match a file is served index.html, so
     // /services, /data-protection etc. resolve on a hard refresh.
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    // Lets the Worker call env.ASSETS.fetch() to serve the built site.
+    "binding": "ASSETS",
+    // Without this, a request matching a real file is served straight from
+    // the asset store and the Worker never runs — so www would serve the
+    // site instead of redirecting. This routes every request through the
+    // Worker first.
+    "run_worker_first": true
   },
 
   // Attaching the domains here makes Wrangler create the Cloudflare custom
