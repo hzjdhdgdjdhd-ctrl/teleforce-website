@@ -203,7 +203,26 @@ git config --local core.sshCommand "ssh -F /dev/null -o IdentitiesOnly=yes -i ~/
 Live domain: **https://teleforcetechnology.org**
 Registered with Ultahost, Inc. on 15 September 2026.
 
-### Primary: Cloudflare Pages (recommended)
+### Deploying with Wrangler (fastest path)
+
+Wrangler uploads `dist/` straight to Cloudflare Pages. It needs no GitHub
+authorization at all, which avoids picking the wrong GitHub account on the
+connect screen.
+
+```bash
+npx wrangler login     # one-off: opens a browser, sign in as hzjdhdgdjdhd@gmail.com
+npm run deploy         # builds, then uploads dist/ to the teleforce-website project
+```
+
+`wrangler pages deploy` creates the project on first run. Confirm the session is
+on the right account at any time with `npm run cf:whoami`.
+
+**Custom domains are dashboard-only** — Wrangler has no command for them. After
+the first deploy: Workers & Pages → `teleforce-website` → Custom domains → add
+`teleforcetechnology.org` and `www`. Cloudflare writes the DNS records itself;
+do not add an A record by hand.
+
+### Alternative: Cloudflare Pages (recommended)
 
 The site is a static SPA, so Cloudflare Pages serves it from a global CDN for
 free, issues SSL automatically, and redeploys on every push to `main`.
