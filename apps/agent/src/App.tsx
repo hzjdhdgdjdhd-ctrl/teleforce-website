@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { UserProfile } from '@teleforce/core'
 import {
   hhcroScript,
@@ -24,6 +24,8 @@ import {
   SupabaseAuth,
   SupabaseRepository,
   SupabaseScripts,
+  PresenceClient,
+  type AgentStatus,
 } from '@teleforce/data'
 import { resolveScript, useCallSession } from './useCallSession'
 import { ContactPanel } from './components/ContactPanel'
@@ -39,6 +41,7 @@ const { repo, backend } = createRepository(
 const supa = repo instanceof SupabaseRepository ? repo : null
 const auth = supa ? new SupabaseAuth(supa) : null
 const scriptApi = supa ? new SupabaseScripts(supa) : null
+const presence = supa ? new PresenceClient(supa) : null
 
 /**
  * Agent workspace.
@@ -123,6 +126,65 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [session])
 
+  /* ---- Presence -------------------------------------------------
+     Derived from what the agent is actually doing rather than asked for
+     separately: a status an agent has to remember to set is a status that
+     is wrong by mid-morning. Break is the one genuine choice. */
+  const [onBreak, setOnBreak] = useState(false)
+
+  const presenceState = useCallback((): {
+    status: AgentStatus
+    campaignId: string
+    contactId: string | null
+    callId: string | null
+    dialStartedAt: string | null
+  } => {
+    const status: AgentStatus = onBreak
+      ? 'break'
+      : !session.contact
+        ? 'available'
+        : session.dialStarted
+          ? 'talking'
+          : 'wrap'
+
+    return {
+      status,
+      campaignId: 'hhcro',
+      contactId: session.contact?.id ?? null,
+      callId: null,
+      dialStartedAt: session.dialStarted ? new Date().toISOString() : null,
+    }
+  }, [onBreak, session.contact, session.dialStarted])
+
+  useEffect(() => {
+    if (!presence || signedIn !== true || agentId === null) return
+    presence.startHeartbeat(presenceState)
+    return () => presence.stopHeartbeat()
+  }, [signedIn, agentId, presenceState])
+
+  // Report the change immediately rather than waiting for the next beat —
+  // a supervisor watching the board should see a call start as it starts.
+  useEffect(() => {
+    if (!presence || signedIn !== true || agentId === null) return
+    void presence.report(presenceState())
+  }, [signedIn, agentId, presenceState])
+
+  // Best effort on close. Not guaranteed, which is why the server expires
+  // stale presence on a heartbeat timeout as well.
+  useEffect(() => {
+    if (!presence) return
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') void presence.report({ status: 'offline' })
+      else void presence.report(presenceState())
+    }
+    window.addEventListener('pagehide', onHide)
+    document.addEventListener('visibilitychange', onHide)
+    return () => {
+      window.removeEventListener('pagehide', onHide)
+      document.removeEventListener('visibilitychange', onHide)
+    }
+  }, [presenceState])
+
   const commands = useMemo<Command[]>(() => {
     const list: Command[] = [
       {
@@ -201,6 +263,8 @@ export default function App() {
         hasCall={Boolean(session.contact)}
         backend={backend}
         {...(auth ? { onSignOut: () => void auth.signOut() } : {})}
+        onBreak={onBreak}
+        toggleBreak={() => setOnBreak((v) => !v)}
       />
 
       <main className="flex-1 px-5 pb-5">
@@ -331,11 +395,15 @@ function Header({
   hasCall,
   backend,
   onSignOut,
+  onBreak,
+  toggleBreak,
 }: {
   elapsed: string
   hasCall: boolean
   backend: 'supabase' | 'local'
   onSignOut?: () => void
+  onBreak?: boolean
+  toggleBreak?: () => void
 }) {
   return (
     <header className="flex items-center justify-between gap-6 border-b border-pearl/10 px-5 py-3.5">
@@ -368,6 +436,15 @@ function Header({
         <span className="hidden font-mono text-[10px] uppercase tracking-[0.16em] text-pearl-faint md:inline">
           ⌘K commands
         </span>
+        {onBreak !== undefined && toggleBreak && (
+          <Button
+            size="sm"
+            variant={onBreak ? 'success' : 'ghost'}
+            onClick={toggleBreak}
+          >
+            {onBreak ? 'End break' : 'Take a break'}
+          </Button>
+        )}
         {onSignOut && (
           <Button size="sm" variant="ghost" onClick={onSignOut}>
             Sign out

@@ -1,0 +1,15 @@
+{
+  // Teleforce supervisor wallboard — static SPA on Workers Assets.
+  "name": "teleforce-supervisor",
+  "compatibility_date": "2026-09-15",
+  "main": "./worker/index.ts",
+  "assets": {
+    "directory": "./dist/client",
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "routes": [
+    { "pattern": "supervisor.teleforcetechnology.org", "custom_domain": true }
+  ]
+}
