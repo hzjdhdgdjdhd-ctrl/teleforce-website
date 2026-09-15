@@ -13,5 +13,13 @@
     // Any path that does not match a file is served index.html, so
     // /services, /data-protection etc. resolve on a hard refresh.
     "not_found_handling": "single-page-application"
-  }
+  },
+
+  // Attaching the domains here makes Wrangler create the Cloudflare custom
+  // domains and the DNS records for them on deploy. Do not add A records by
+  // hand — Cloudflare manages these, and a manual record will conflict.
+  "routes": [
+    { "pattern": "teleforcetechnology.org", "custom_domain": true },
+    { "pattern": "www.teleforcetechnology.org", "custom_domain": true }
+  ]
 }
