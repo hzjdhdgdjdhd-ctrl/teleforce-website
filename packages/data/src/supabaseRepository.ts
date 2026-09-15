@@ -105,6 +105,21 @@ export class SupabaseRepository implements Repository {
     if (error) throw new Error(error.message)
   }
 
+  async closeContact(
+    id: string,
+    status: Contact['status'],
+    notes?: string,
+    callbackAt?: string,
+  ): Promise<void> {
+    const { error } = await this.db.rpc('close_contact', {
+      target_contact: id,
+      new_status: status,
+      new_notes: notes ?? null,
+      new_callback_at: callbackAt ?? null,
+    })
+    if (error) throw new Error(error.message)
+  }
+
   async listContacts(campaignId: string): Promise<Contact[]> {
     const { data, error } = await this.db
       .from('contacts')

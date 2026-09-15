@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { UserProfile } from '@teleforce/core'
 import {
   hhcroScript,
   isComplete,
@@ -57,6 +58,7 @@ export default function App() {
   const [agentId, setAgentId] = useState<string | null>(
     auth ? null : 'local-agent',
   )
+  const [profile, setProfile] = useState<UserProfile | null>(null)
 
   useEffect(() => {
     if (!auth) return
@@ -68,6 +70,7 @@ export default function App() {
     if (!signedIn) return
     void repo.currentUser().then((u) => {
       setAgentId(u?.uid ?? null)
+      setProfile(u)
     })
   }, [signedIn])
 
@@ -206,7 +209,11 @@ export default function App() {
           <Panel className="flex h-[70vh] items-center justify-center">
             <EmptyState
               title="Cannot load your queue"
-              description={session.error}
+              description={
+                profile
+                  ? `${session.error} — signed in as ${profile.email} (${profile.role})`
+                  : session.error
+              }
               action={
                 <div className="w-full max-w-sm space-y-4">
                   <Button

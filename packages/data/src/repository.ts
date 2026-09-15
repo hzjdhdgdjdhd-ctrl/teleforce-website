@@ -24,6 +24,17 @@ export interface Repository {
    */
   claimContactByPhone(campaignId: string, phone: string): Promise<Contact | null>
   updateContact(id: string, patch: Partial<Contact>): Promise<void>
+  /**
+   * Disposition a contact and release it. Server-side so an agent can only
+   * ever close a contact actually assigned to them, and so the browser does
+   * not need write access to the contacts table.
+   */
+  closeContact(
+    id: string,
+    status: Contact['status'],
+    notes?: string,
+    callbackAt?: string,
+  ): Promise<void>
   listContacts(campaignId: string): Promise<Contact[]>
   addContacts(contacts: Array<Omit<Contact, 'id'>>): Promise<string[]>
 

@@ -116,6 +116,32 @@ export class LocalRepository implements Repository {
     )
   }
 
+  async closeContact(
+    id: string,
+    status: Contact['status'],
+    notes?: string,
+    callbackAt?: string,
+  ): Promise<void> {
+    const contacts = read<Contact[]>(STORE_KEYS.contacts, [])
+    write(
+      STORE_KEYS.contacts,
+      contacts.map((c) =>
+        c.id === id
+          ? {
+              ...c,
+              status,
+              attempts: c.attempts + 1,
+              lastAttemptAt: nowIso(),
+              ...(notes ? { notes } : {}),
+              ...(callbackAt ? { callbackAt } : {}),
+              assignedTo: undefined,
+              assignedAt: undefined,
+            }
+          : c,
+      ),
+    )
+  }
+
   async listContacts(campaignId: string): Promise<Contact[]> {
     return read<Contact[]>(STORE_KEYS.contacts, []).filter(
       (c) => c.campaignId === campaignId,

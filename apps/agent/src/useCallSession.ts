@@ -14,7 +14,6 @@ import {
   type Lead,
 } from '@teleforce/core'
 import {
-  nowIso,
   SupabaseScripts,
   type Repository,
 } from '@teleforce/data'
@@ -150,7 +149,8 @@ export function useCallSession(
           rebuttalsUsed: [],
         })
         setCallId(id)
-        await repo.updateContact(next.id, { status: 'in_call' })
+        // claim_next_contact already set status to 'in_call'. A second write
+        // from the browser goes through RLS as the agent and was failing.
       } else {
         setStartedAt(null)
       }
@@ -320,21 +320,18 @@ export function useCallSession(
           await repo.updateCall(callId, { leadId })
         }
 
-        await repo.updateContact(contact.id, {
-          status:
-            disposition === 'callback'
-              ? 'callback'
-              : disposition === 'do_not_call'
-                ? 'dnc'
-                : disposition === 'wrong_number'
-                  ? 'invalid'
-                  : 'completed',
-          attempts: contact.attempts + 1,
-          lastAttemptAt: nowIso(),
-          ...(callbackAt ? { callbackAt } : {}),
-          ...(notes ? { notes } : {}),
-          assignedTo: undefined,
-        })
+        await repo.closeContact(
+          contact.id,
+          disposition === 'callback'
+            ? 'callback'
+            : disposition === 'do_not_call'
+              ? 'dnc'
+              : disposition === 'wrong_number'
+                ? 'invalid'
+                : 'completed',
+          notes,
+          callbackAt,
+        )
 
         await loadNext()
       } catch (e) {
