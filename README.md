@@ -148,6 +148,56 @@ single CTA, never as a fill.
 
 ---
 
+## Git & GitHub account binding
+
+This machine has several GitHub accounts. This repo is bound to
+**James Rawlinson (`hzjdhdgdjdhd-ctrl`)** on three independent layers so it
+cannot be confused with any other project — in particular the `ward54` /
+`shadowgreen9371` account, which owns the default `github.com` SSH entry.
+
+| Layer | Setting | Effect |
+|-------|---------|--------|
+| SSH key | `core.sshCommand` → `ssh -F /dev/null -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519_teleforce` | `-F /dev/null` makes this repo ignore `~/.ssh/config` entirely, so the `github.com` → `ward54` entry can never be consulted. Only this key is ever offered. |
+| Commit author | `James Rawlinson <329507849+hzjdhdgdjdhd-ctrl@users.noreply.github.com>` | GitHub attributes commits by **email**. The numeric id binds to this account and no other. |
+| Global fallback | `user.useConfigOnly true`, global name/email unset | A repo with no local identity fails loudly rather than silently inheriting the wrong one. |
+
+### Remote URL — use the plain form
+
+Because this repo ignores `~/.ssh/config`, the `github-teleforce` alias does
+**not** resolve here. Write the remote normally:
+
+```bash
+git remote add origin git@github.com:hzjdhdgdjdhd-ctrl/REPO.git
+git push -u origin main
+```
+
+The repo-local `core.sshCommand` forces the correct key regardless of the URL.
+
+### Verify the binding at any time
+
+```bash
+# Must print: hzjdhdgdjdhd-ctrl
+ssh -F /dev/null -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519_teleforce -T git@github.com
+
+# Must print: James Rawlinson <329507849+hzjdhdgdjdhd-ctrl@users.noreply.github.com>
+git log -1 --format='%an <%ae>'
+```
+
+### Cloning other repos from this account
+
+Outside this directory there is no repo-local config, so use the host alias in
+`~/.ssh/config`, then pin the identity immediately after cloning:
+
+```bash
+git clone git@github-teleforce:hzjdhdgdjdhd-ctrl/REPO.git
+cd REPO
+git config --local user.name "James Rawlinson"
+git config --local user.email "329507849+hzjdhdgdjdhd-ctrl@users.noreply.github.com"
+git config --local core.sshCommand "ssh -F /dev/null -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519_teleforce"
+```
+
+---
+
 ## Deployment
 
 Static SPA — build `dist/` and serve it. Deep links need a catch-all rewrite to
