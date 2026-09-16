@@ -48,9 +48,9 @@ export default function Footer() {
             <Logo variant="reversed" className="h-12 w-auto" />
 
             <p className="mt-7 text-[14px] leading-[1.75] text-pearl-dim">
-              Human-powered business operations for {company.primaryMarket}{' '}
-              organisations. People create trust. Technology enables delivery.
-              Process ensures quality.
+              Human-powered business operations for organisations in the
+              United Kingdom, the United States and Australia. People create
+              trust. Technology enables delivery. Process ensures quality.
             </p>
 
             <div className="mt-8 space-y-4 border-t border-pearl/8 pt-7">

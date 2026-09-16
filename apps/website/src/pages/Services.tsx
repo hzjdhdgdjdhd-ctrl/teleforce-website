@@ -33,7 +33,7 @@ export default function Services() {
             {[
               ['Service lines', '06'],
               ['Delivery centre', company.deliveryCentre],
-              ['Primary market', company.primaryMarket],
+              ['Markets served', company.marketsShort],
               ['Team models', 'Dedicated · Managed · Extended'],
             ].map(([term, value]) => (
               <div key={term} className="flex items-baseline justify-between gap-6 py-4">

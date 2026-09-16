@@ -1,5 +1,6 @@
 import Hero from '@/components/sections/Hero'
 import Philosophy from '@/components/sections/Philosophy'
+import Markets from '@/components/sections/Markets'
 import TechSplit from '@/components/sections/TechSplit'
 import CtaBand from '@/components/sections/CtaBand'
 import { Container, Eyebrow, Section } from '@/components/ui/Section'
@@ -15,13 +16,14 @@ import { company } from '@/config/company'
 export default function Home() {
   useSeo(
     'Human Expertise. Secure Operations. Business Growth.',
-    `${company.tradingName} is a human-powered business process outsourcing partner for ${company.primaryMarket} organisations — dedicated teams, documented process and responsible data handling.`,
+    `${company.tradingName} is a human-powered business process outsourcing partner operating in the United Kingdom, the United States and Australia — dedicated teams, documented process and responsible data handling.`,
   )
 
   return (
     <>
       <Hero />
       <Philosophy />
+      <Markets />
 
       {/* ---------------- Services ---------------- */}
       <Section id="services" className="border-t border-pearl/8">
@@ -29,7 +31,7 @@ export default function Home() {
           <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
               <Reveal>
-                <Eyebrow index="02">Service Lines</Eyebrow>
+                <Eyebrow index="03">Service Lines</Eyebrow>
               </Reveal>
               <Reveal delay={0.06}>
                 <h2 className="mt-6 text-[clamp(1.9rem,4vw,3.1rem)] leading-[1.08] text-gradient-pearl">
@@ -78,7 +80,7 @@ export default function Home() {
         <Container>
           <div className="max-w-2xl">
             <Reveal>
-              <Eyebrow index="04">Dedicated Teams</Eyebrow>
+              <Eyebrow index="05">Dedicated Teams</Eyebrow>
             </Reveal>
             <Reveal delay={0.06}>
               <h2 className="mt-6 text-[clamp(1.9rem,4vw,3.1rem)] leading-[1.08] text-gradient-pearl">
@@ -143,7 +145,7 @@ export default function Home() {
           <div className="grid gap-14 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
             <div className="lg:sticky lg:top-32 lg:self-start">
               <Reveal>
-                <Eyebrow index="05">Engagement Model</Eyebrow>
+                <Eyebrow index="06">Engagement Model</Eyebrow>
               </Reveal>
               <Reveal delay={0.06}>
                 <h2 className="mt-6 text-[clamp(1.8rem,3.4vw,2.7rem)] leading-[1.1] text-gradient-pearl">
@@ -193,7 +195,7 @@ export default function Home() {
               />
               <div className="relative grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
                 <div>
-                  <Eyebrow index="06">Data Protection</Eyebrow>
+                  <Eyebrow index="07">Data Protection</Eyebrow>
                   <h2 className="mt-6 text-[clamp(1.7rem,3.2vw,2.5rem)] leading-[1.12] text-gradient-pearl">
                     Handled carefully, described honestly.
                   </h2>

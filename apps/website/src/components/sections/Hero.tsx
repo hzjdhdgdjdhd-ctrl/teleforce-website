@@ -8,13 +8,13 @@ import { useSection } from '@/hooks/useSection'
 
 /** Shipped copy. The CMS overrides these; it never replaces the file. */
 const DEFAULT_HERO = {
-  eyebrow: `Business Process Outsourcing · ${company.primaryMarket}`,
+  eyebrow: `Business Process Outsourcing · ${company.marketsShort}`,
   headlineLines: ['Human Expertise.', 'Secure Operations.', 'Business Growth.'],
   lede:
-    `Teleforce runs business operations for ${company.primaryMarket} ` +
-    'organisations with trained, named teams — not automated queues. We take ' +
-    "ownership of the processes that consume your people's time, and we run " +
-    'them to a documented standard you can inspect.',
+    'Teleforce runs business operations in the United Kingdom, the United ' +
+    'States and Australia with trained, named teams — not automated queues. ' +
+    "We take ownership of the processes that consume your people's time, and " +
+    'we run them to a documented standard you can inspect.',
   primaryCta: 'Start a conversation',
   secondaryCta: 'Explore our services',
 }
@@ -154,7 +154,7 @@ export default function Hero() {
           <dl className="grid grid-cols-2 divide-pearl/8 md:grid-cols-4 md:divide-x">
             {[
               ['Delivery Centre', company.deliveryCentre],
-              ['Primary Market', company.primaryMarket],
+              ['Markets Served', company.marketsLine],
               ['Incorporated', company.incorporatedOn],
               ['Engagement Model', 'Dedicated · Managed · Extended'],
             ].map(([term, value], i) => (

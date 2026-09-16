@@ -128,8 +128,8 @@ export default function Navbar() {
         <Container>
           <div className="flex h-9 items-center justify-between font-mono text-[10.5px] tracking-[0.16em] text-pearl-faint uppercase">
             <span>
-              Human-powered business operations · Delivering to the{' '}
-              {company.primaryMarket}
+              Human-powered business operations · Delivering to{' '}
+              {company.marketsShort}
             </span>
             <span className="flex items-center gap-5">
               <span className="flex items-center gap-2">

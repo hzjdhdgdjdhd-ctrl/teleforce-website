@@ -6,7 +6,7 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",
-        "dev"
+        "dev:website"
       ],
       "port": 5173
     },

@@ -53,11 +53,20 @@ export const company = {
   domain: 'teleforcetechnology.org',
   siteUrl: 'https://teleforcetechnology.org',
 
-  /* ---- Operating footprint ---- */
+  /* ---- Operating footprint ----
+     Programmes run in three markets; see data/markets.ts for what each one
+     actually is. `primaryMarket` is deliberately still the UK: it is the
+     market the Data Protection page is written against, and that page makes
+     UK-specific legal statements which must not silently become claims about
+     three jurisdictions. Use `marketsLine` for anything describing reach. */
   deliveryCentre: 'Siliguri, West Bengal, India',
   primaryMarket: 'United Kingdom',
   /** Short form — use where 'United Kingdom' reads wrong, e.g. 'the UK\n   *  Data Protection Act', 'UK controller', 'UK residents'. */
   marketShort: 'UK',
+  /** Every market served, long form. */
+  marketsLine: 'United Kingdom · United States · Australia',
+  /** Every market served, short form — for mono readouts and utility bars. */
+  marketsShort: 'UK · USA · Australia',
 } as const
 
 export const formattedAddress = [

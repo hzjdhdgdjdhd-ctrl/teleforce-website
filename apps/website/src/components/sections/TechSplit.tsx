@@ -21,7 +21,7 @@ export default function TechSplit({ standalone = false }: { standalone?: boolean
         {!standalone && (
           <div className="mb-16 max-w-3xl md:mb-20">
             <Reveal>
-              <Eyebrow index="03">Technology</Eyebrow>
+              <Eyebrow index="04">Technology</Eyebrow>
             </Reveal>
             <Reveal delay={0.06}>
               <h2 className="mt-6 text-[clamp(1.9rem,4vw,3.1rem)] leading-[1.08] text-gradient-pearl">
