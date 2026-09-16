@@ -103,24 +103,12 @@ function MarketPanel({ market, now }: { market: Market; now: Date }) {
             {/* Set in the client's own capitalisation rather than the mono
                 uppercase used for labels — it is a company's name, not a
                 field heading. */}
-            <dd className="mt-1 text-[12.5px] leading-snug">
-              {market.client.url ? (
-                <a
-                  href={market.client.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gold/85 underline-offset-4 transition-colors hover:text-gold hover:underline"
-                >
-                  {market.client.name}
-                </a>
-              ) : (
-                <span className="text-pearl-dim">{market.client.name}</span>
-              )}
+            <dd className="mt-1 text-[12.5px] leading-snug text-pearl-dim">
+              {market.client.name}
             </dd>
           </div>
         )}
       </dl>
-
     </Card>
   )
 }

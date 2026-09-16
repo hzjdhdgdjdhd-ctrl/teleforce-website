@@ -14,8 +14,12 @@
 export interface MarketClient {
   /** Legal name exactly as the client publishes it. */
   name: string
-  /** Optional outbound link. Blank renders the name as plain text. */
-  url: string
+  /**
+   * Outbound link, only where the client has asked to be linked. Absent is
+   * the default: naming a client we work with is a statement about us,
+   * sending buyers to their site is a statement about them.
+   */
+  url?: string
 }
 
 export interface Market {
@@ -75,7 +79,6 @@ export const markets: readonly Market[] = [
     timeZone: 'America/New_York',
     client: {
       name: 'CDM Global Goods Wholesalers L.L.C.',
-      url: 'https://cdm-global.com/',
     },
   },
   {
